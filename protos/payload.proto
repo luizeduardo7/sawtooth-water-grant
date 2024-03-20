@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+
+message Payload{
+    enum Action {
+        CREATE_USER = 0;
+        UPDATE_USER = 1;
+        CREATE_SENSOR = 2;
+        UPDATE_SENSOR = 3;
+    }
+
+    // If the payload contains a create user, create sensor or
+    // update sensor action
+    Action action = 1;
+
+    // The transaction handler will read from just one of these fields
+    // according to the action
+    CreateUserAction create_user = 2;
+    UpdateUserAction update_user = 3;
+    CreateSensorAction create_sensor = 4;
+    UpdateSensorAction update_sensor = 5;
+
+    // Approximately when transaction was submitted, as a Unix UTC timestamp
+    uint64 timestamp = 6;
+}
+
+
+message CreateUserAction {
+    // A human-readable name identifying the new user
+    string name = 1;
+
+    //  Initial quota of the user
+    double quota = 2;
+}
+
+message UpdateUserAction {
+    // User's unique public key
+    string user_id = 1;
+
+    // New quota
+    double quota = 2;
+}
+
+
+message CreateSensorAction {
+    // The user-defined natural key which identifies the object in the
+    // real world (for example a serial number)
+    string sensor_id = 1;
+
+    // Coordinates are expected to be in millionths of a degree
+    sint64 latitude = 2;
+    sint64 longitude = 3;
+
+    // Initial measurement of the sensor
+    double measurement = 4;
+}
+
+
+message UpdateSensorAction {
+    // The id of the sensor being updated
+    string sensor_id = 1;
+
+    // New measurement
+    double measurement = 2;
+}

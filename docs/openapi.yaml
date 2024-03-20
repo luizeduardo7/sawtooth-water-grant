@@ -1,0 +1,341 @@
+swagger: '2.0'
+info:
+  version: 0.0.0
+  title: Sawtooth Water Grant REST API
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  AuthToken:
+    type: apiKey
+    in: header
+    name: Authorization
+paths:
+  /authentication:
+    post:
+      description: Requests an authorization token for a registered user
+      parameters:
+        - name: credentials
+          description: User account info to be authenticated by the server
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/AuthCredentials'
+      responses:
+        '200':
+          description: Success response with authorization token
+          schema:
+            type: object
+            properties:
+              authorization:
+                $ref: '#/definitions/AuthToken'
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '500':
+          $ref: '#/responses/500ServerError'
+  /users:
+    post:
+      description: Creates a new user
+      parameters:
+        - name: user
+          description: Parameters for the new user
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewUserBody'
+      responses:
+        '200':
+          description: Success response with auth token
+          schema:
+            type: object
+            properties:
+              authorization:
+                $ref: '#/definitions/AuthToken'
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '500':
+          $ref: '#/responses/500ServerError'
+    get:
+      description: Fetches the complete details of all users
+      responses:
+        '200':
+          description: Success response with a list of all users
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/UserObject'
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '500':
+          $ref: '#/responses/500ServerError'
+  '/users/{user_id}':
+    parameters:
+      - $ref: '#/parameters/user_id'
+    get:
+      description: Fetches the complete details of a particular user
+      responses:
+        '200':
+          description: Success response with the requested user
+          schema:
+            $ref: '#/definitions/UserObject'
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '404':
+          $ref: '#/responses/404NotFound'
+        '500':
+          $ref: '#/responses/500ServerError'
+  /sensors:
+    post:
+      description: Creates a new sensor
+      security:
+        - AuthToken: []
+      parameters:
+        - name: sensor
+          description: Parameters for the new sensor
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewSensorBody'
+      responses:
+        '200':
+          description: Success response
+          schema:
+            type: object
+            properties:
+              data:
+                type: string
+                example: Create sensor transaction submitted
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '500':
+          $ref: '#/responses/500ServerError'
+    get:
+      description: Fetches complete details of all sensors
+      responses:
+        '200':
+          description: Success response with a list of all sensors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SensorObject'
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '500':
+          $ref: '#/responses/500ServerError'
+  '/sensors/{sensor_id}':
+    parameters:
+      - $ref: '#/parameters/sensor_id'
+    get:
+      description: Fetches the complete details of a sensor
+      responses:
+        '200':
+          description: Success response with the requested sensor
+          schema:
+            $ref: '#/definitions/SensorObject'
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '404':
+          $ref: '#/responses/404NotFound'
+        '500':
+          $ref: '#/responses/500ServerError'
+  '/sensors/{sensor_id}/transfer':
+    parameters:
+      - $ref: '#/parameters/sensor_id'
+    post:
+      description: Transfers a sensor to a new owner
+      security:
+        - AuthToken: []
+      parameters:
+        - name: transfer
+          description: Updated owner parameter
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/TransferSensorBody'
+      responses:
+        '200':
+          description: Success response
+          schema:
+            type: object
+            properties:
+              data:
+                type: string
+                example: Transfer sensor transaction submitted
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '404':
+          $ref: '#/responses/404NotFound'
+        '500':
+          $ref: '#/responses/500ServerError'
+  '/sensors/{sensor_id}/update':
+    parameters:
+      - $ref: '#/parameters/sensor_id'
+    post:
+      description: Updates a sensor's location
+      security:
+        - AuthToken: []
+      parameters:
+        - name: update
+          description: Updated owner parameter
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateSensorBody'
+      responses:
+        '200':
+          description: Success response
+          schema:
+            type: object
+            properties:
+              data:
+                type: string
+                example: Update sensor transaction submitted
+        '400':
+          $ref: '#/responses/400BadRequest'
+        '404':
+          $ref: '#/responses/404NotFound'
+        '500':
+          $ref: '#/responses/500ServerError'
+responses:
+  400BadRequest:
+    description: Client request was invalid
+    schema:
+      $ref: '#/definitions/ErrorObject'
+  404NotFound:
+    description: Key or id did not match any resource
+    schema:
+      $ref: '#/definitions/ErrorObject'
+  500ServerError:
+    description: Something went wrong within the REST API
+    schema:
+      $ref: '#/definitions/ErrorObject'
+definitions:
+  UserObject:
+    properties:
+      public_key:
+        description: The user's unique public key
+        type: string
+        example: 02178c1bcdb25407394348f1ff5273adae287d8ea328184546837957e71c7de57a
+      name:
+        description: A human-readable name identifying the user
+        type: string
+        example: Alice
+      timestamp:
+        description: 'Approximately when the user was registered, as a Unix UTC timestamp'
+        type: number
+        example: 20180124130651
+  AuthCredentials:
+    properties:
+      public_key:
+        description: The user's unique public key
+        type: string
+        example: 02178c1bcdb25407394348f1ff5273adae287d8ea328184546837957e71c7de57a
+      password:
+        description: Password of the user attempting to authenticate
+        type: string
+        example: password12345
+  AuthToken:
+    description: A token used to authorize client requests
+    type: string
+    example: >-
+      eyJpYXQiOjE1MTA4NjM5NzksImV4cCI6MTUxMDg2NzU3OSwiYWxnIjoiSFMyNTYifQ.eyJpZCI6IjAyYTA2ZjM0NGM2MDc0ZTRiZDBjYThhMmFiZTQ1ZWU2ZWM5MmJmOWNkZDdiN2E2N2M4MDQzNTBiZmZmNGQ0YThjMCJ9.mM_uwZ1wrdag5PoCNThn_0gzZpsIhC_xSsa8xIFxggs
+  ErrorObject:
+    properties:
+      error:
+        description: A message describing the error that occured
+        type: string
+        example: A sensor can only be transferred by its owner
+  LocationObject:
+    properties:
+      latitude:
+        description: Latitude of the sensor in millionths of digits
+        type: number
+        example: 44982734
+      longitude:
+        description: Longitude of the sensor in millionths of digits
+        type: number
+        example: -93272107
+      timestamp:
+        description: Unix UTC timestamp of when the Location update was submitted
+        type: number
+        example: 20180124130651
+  NewUserBody:
+    properties:
+      name:
+        description: A human-readable name identifying the new user
+        type: string
+        example: Alice
+      password:
+        description: Password of the user attempting to authenticate
+        type: string
+        example: password12345
+  NewSensorBody:
+    properties:
+      latitude:
+        description: Initial latitude of the sensor in millionths of digits
+        type: number
+        example: 44982734
+      longitude:
+        description: Initial longitude of the sensor in millionths of digits
+        type: number
+        example: -93272107
+      sensor_id:
+        description: User-defined natural key which identifies the object
+        type: string
+        example: fish-44
+  OwnerObject:
+    properties:
+      user_id:
+        description: Public key of a particular user
+        type: string
+        example: 02178c1bcdb25407394348f1ff5273adae287d8ea328184546837957e71c7de57a
+      timestamp:
+        description: Unix UTC timestamp of when the ownership update was submitted
+        type: number
+        example: 20180124130651
+  SensorObject:
+    properties:
+      sensor_id:
+        description: The user-defined natural key which identifies the sensor
+        type: string
+        example: fish-44
+      owners:
+        type: array
+        items:
+          $ref: '#/definitions/OwnerObject'
+      locations:
+        type: array
+        items:
+          $ref: '#/definitions/LocationObject'
+  TransferSensorBody:
+    properties:
+      receiving_user:
+        description: Public key of a particular user
+        type: string
+        example: 02178c1bcdb25407394348f1ff5273adae287d8ea328184546837957e71c7de57a
+  UpdateSensorBody:
+    properties:
+      latitude:
+        description: Initial latitude of the sensor in millionths of digits
+        type: number
+        example: 44982734
+      longitude:
+        description: Initial longitude of the sensor in millionths of digits
+        type: number
+        example: -93272107
+parameters:
+  user_id:
+    name: user_id
+    description: Public key of a particular user
+    in: path
+    required: true
+    type: string
+    x-example: 02178c1bcdb25407394348f1ff5273adae287d8ea328184546837957e71c7de57a
+  sensor_id:
+    name: sensor_id
+    description: Id of a particular sensor
+    in: path
+    required: true
+    type: string
+    x-example: fish-44
