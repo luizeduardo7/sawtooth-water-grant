@@ -65,6 +65,7 @@ services:
       - water-grant-shell
     command: |
       bash -c "
+        chmod -R 777 /project/sawtooth-water-grant &&
         water-grant-rest-api --db-host postgres -vv -B water-grant-rest-api:8000 -C validator:4004
       "
 
@@ -81,6 +82,7 @@ services:
       - postgres
     command: |
       bash -c "
+        chmod -R 777 /project/sawtooth-water-grant &&
         water-grant-subscriber subscribe --db-host postgres -vv -C tcp://validator:4004
       "
 

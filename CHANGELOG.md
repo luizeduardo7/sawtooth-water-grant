@@ -7,6 +7,12 @@ All changes to the Sawtooth Water Grant project are recorded here. Changes must 
 
 Thanks for contributing.
 
+## [0.2]
+
+### Fixed
+
+- Fix permission denied error on rest-api and subscriber 
+
 ## [0.1]
 
 ### Added
