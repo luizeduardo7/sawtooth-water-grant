@@ -34,7 +34,10 @@ const updateSubmitter = state => e => {
   update.quota = parsing.toFloat(update.quota)
 
   api.post(`users/${publicKey}/update`, update)
-    .then(() => m.route.set(`/users/${publicKey}`))
+    .then(() => {
+      // m.route.set(`/users/${publicKey}`)
+      window.location.reload();
+    })
     .catch(api.alertError)
 }
 

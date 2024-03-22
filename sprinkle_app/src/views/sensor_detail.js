@@ -48,7 +48,10 @@ const updateSubmitter = state => e => {
   update.measurement = parsing.toFloat(update.measurement)
 
   api.post(`sensors/${sensorId}/update`, update)
-    .then(() => m.route.set(`/sensors/${sensorId}`))
+    .then(() => {
+      // m.route.set(`/sensors/${sensorId}`)
+      window.location.reload();
+     })
     .catch(api.alertError)
 }
 
@@ -132,7 +135,7 @@ const SensorDetailPage = {
           (owner == api.getPublicKey())
           ? m('.update-form', [
             m('form', { onsubmit: updateSubmitter(vnode.state, sensorId) },
-            m('legend', 'Atualizar Leitura'),
+            m('legend', 'Atualizar Leitura (apenas para teste)'),
             layout.row([
               forms.group('Leitura (m³)', forms.field(setter('measurement'), {
                 type: 'number',
@@ -142,29 +145,33 @@ const SensorDetailPage = {
             ]),
             m('.form-group',
               m('.row.justify-content-end.align-items-end',
-                m('col-2',
+                m('.col-12.col-md-2', 
                   m('button.btn.btn-primary',
                     'Atualizar Leitura')))))
             ])
           : ''),
-        (owner == api.getPublicKey())
-        ? 
-        m('table.table', [
-          m('thead',
-            m('tr', [
-              m('th', 'Leitura (m³)'),
-              m('th', 'Data e Hora')
+          (owner == api.getPublicKey())
+          ? m('.container', [
+              m('table.table', [
+                m('thead',
+                  m('tr', [
+                    m('th', 'Leitura (m³)'),
+                    m('th', 'Data e Hora')
+                  ])
+                ),
+                m('tbody', measurementTable)
+              ]),
+              layout.row([
+                m('.col-md-12.text-right.mt-3.mb-3', [
+                  m('.pagination.justify-content-end', [ // Adicionando classe justify-content-end
+                    m('button.btn.btn-primary.mr-1', { onclick: prevPage, disabled: currentPage === 1 }, 'Página Anterior'),
+                    m('span',  { style: { verticalAlign: 'middle' } },` Página ${currentPage} de ${totalPages} `),
+                    m('button.btn.btn-primary.ml-1', { onclick: nextPage, disabled: currentPage === totalPages }, 'Próxima Página')
+                  ])
+                ])
+              ])
             ])
-          ),
-          m('tbody', measurementTable)
-        ]) : "",
-        (owner == api.getPublicKey())
-        ? 
-        m('.pagination', [
-          m('button.btn.btn-primary', { onclick: prevPage, disabled: currentPage === 1 }, 'Página Anterior'),
-          m('span', ` Página ${currentPage} de ${totalPages} `),
-          m('button.btn.btn-primary', { onclick: nextPage, disabled: currentPage === totalPages }, 'Próxima Página')
-        ]) : "",
+          : ""
     // Atualização de localização desativada.
     // layout.row(
     //   (owner == api.getPublicKey())

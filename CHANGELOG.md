@@ -7,6 +7,12 @@ All changes to the Sawtooth Water Grant project are recorded here. Changes must 
 
 Thanks for contributing.
 
+## [0.3]
+
+### Updated
+
+- Updates at user and sensor detail page
+
 ## [0.2]
 
 ### Fixed
