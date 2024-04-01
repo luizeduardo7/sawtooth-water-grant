@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+
+message Admin {
+    // Admin's unique public key
+    string public_key = 1;
+
+    // A string with the Admin was registered, as a Unix UTC timestamp
+    string name = 2;
+
+    // Approximately when the admin was registered, as a Unix UTC timestamp
+    uint64 created_at = 3;
+}
+
+
+message AdminContainer {
+    repeated Admin entries = 1;
+}

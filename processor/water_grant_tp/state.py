@@ -15,6 +15,7 @@
 
 from water_grant_addressing import addresser
 
+from water_grant_protobuf import admin_pb2
 from water_grant_protobuf import user_pb2
 from water_grant_protobuf import sensor_pb2
 
@@ -23,6 +24,57 @@ class WaterGrantState(object):
     def __init__(self, context, timeout=2):
         self._context = context
         self._timeout = timeout
+
+    def get_admin(self, public_key):
+        """Gets the admin associated with the public_key
+
+        Args:
+            public_key (str): The public key of the admin
+
+        Returns:
+            admin_pb2.Admin: Admin with the provided public_key
+        """
+        address = addresser.get_admin_address(public_key)
+        state_entries = self._context.get_state(
+            addresses=[address], timeout=self._timeout)
+        if state_entries:
+            container = admin_pb2.AdminContainer()
+            container.ParseFromString(state_entries[0].data)
+            for admin in container.entries:
+                if admin.public_key == public_key:
+                    return admin
+
+        return None    
+    
+    def set_admin(
+            self,
+            public_key,
+            name,
+            timestamp):
+        """Creates a new admin in state
+
+        Args:
+            public_key (str): The public key of the admin
+            name (str): The human-readable name of the admin
+            timestamp (int): Unix UTC timestamp of when the admin was created
+        """
+        address = addresser.get_admin_address(public_key)
+        admin = admin_pb2.Admin(
+            public_key=public_key,
+            name=name,
+            created_at=timestamp,)
+        container = admin_pb2.AdminContainer()
+        state_entries = self._context.get_state(
+            addresses=[address], timeout=self._timeout)
+        if state_entries:
+            container.ParseFromString(state_entries[0].data)
+
+        container.entries.extend([admin])
+        data = container.SerializeToString()
+
+        updated_state = {}
+        updated_state[address] = data
+        self._context.set_state(updated_state, timeout=self._timeout)
 
     def get_user(self, public_key):
         """Gets the user associated with the public_key
@@ -45,7 +97,13 @@ class WaterGrantState(object):
 
         return None
 
-    def set_user(self, public_key, name, timestamp, quota):
+    def set_user(
+            self,
+            public_key,
+            name,
+            timestamp,
+            quota,
+            created_by_admin_public_key):
         """Creates a new user in state
 
         Args:
@@ -53,13 +111,16 @@ class WaterGrantState(object):
             name (str): The human-readable name of the user
             timestamp (int): Unix UTC timestamp of when the user was created
             quota (float): Initial quota of the user
+            created_by_admin_public_key: The admin's public_key that created the user
         """
         address = addresser.get_user_address(public_key)
         user = user_pb2.User(
             public_key=public_key,
             name=name,
-            timestamp=timestamp,
-            quota=quota)
+            created_at=timestamp,
+            quota=quota,
+            created_by_admin_public_key=created_by_admin_public_key,
+            updated_by_admin_public_key=None)
         container = user_pb2.UserContainer()
         state_entries = self._context.get_state(
             addresses=[address], timeout=self._timeout)
@@ -73,8 +134,12 @@ class WaterGrantState(object):
         updated_state[address] = data
         self._context.set_state(updated_state, timeout=self._timeout)
 
-    def update_user(self, quota, user_id, timestamp):
-        address = addresser.get_user_address(user_id)
+    def update_user(self,
+                    quota,
+                    user_public_key,
+                    timestamp,
+                    updated_by_admin_public_key):
+        address = addresser.get_user_address(user_public_key)
         container = user_pb2.UserContainer()
         state_entries = self._context.get_state(
             addresses=[address], timeout=self._timeout)
@@ -83,8 +148,10 @@ class WaterGrantState(object):
             container.ParseFromString(state_entries[0].data)
             for user in container.entries:
                 print(user)
-                if user.public_key == user_id:
+                if user.public_key == user_public_key:
                     user.quota = quota
+                    user.updated_at = timestamp
+                    user.updated_by_admin_public_key = updated_by_admin_public_key
         data = container.SerializeToString()
         updated_state = {}
         updated_state[address] = data
@@ -130,7 +197,7 @@ class WaterGrantState(object):
         """
         address = addresser.get_sensor_address(sensor_id)
         owner = sensor_pb2.Sensor.Owner(
-            user_id=public_key,
+            user_public_key=public_key,
             timestamp=timestamp)
         location = sensor_pb2.Sensor.Location(
             latitude=latitude,

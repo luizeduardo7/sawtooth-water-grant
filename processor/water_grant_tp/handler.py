@@ -55,7 +55,12 @@ class WaterGrantHandler(TransactionHandler):
 
         _validate_timestamp(payload.timestamp)
 
-        if payload.action == payload_pb2.Payload.CREATE_USER:
+        if payload.action == payload_pb2.Payload.CREATE_ADMIN:
+            _create_admin(
+                state=state,
+                public_key=header.signer_public_key,
+                payload=payload)
+        elif payload.action == payload_pb2.Payload.CREATE_USER:
             _create_user(
                 state=state,
                 public_key=header.signer_public_key,
@@ -78,35 +83,48 @@ class WaterGrantHandler(TransactionHandler):
         else:
             raise InvalidTransaction('Unhandled action')
 
+def _create_admin(state, public_key, payload):
+    if state.get_admin(public_key):
+        raise InvalidTransaction('Admin with the public key {} already '
+                                 'exists'.format(public_key))
+    state.set_admin(
+        public_key=public_key,
+        name=payload.data.name,
+        created_at=payload.timestamp)
+
 
 def _create_user(state, public_key, payload):
     if state.get_user(public_key):
         raise InvalidTransaction('User with the public key {} already '
                                  'exists'.format(public_key))
+    
+    created_by = payload.data.created_by_admin_public_key
+    admin_public_key = _validate_admin(state, created_by)
+
     state.set_user(
         public_key=public_key,
         name=payload.data.name,
-        timestamp=payload.timestamp,
-        quota=payload.data.quota)
+        created_at=payload.timestamp,
+        quota=payload.data.quota,
+        created_by_admin_public_key=admin_public_key)
 
 
-def _update_user(state, public_key, payload):
-    user = state.get_user(payload.data.user_id)
+def _update_user(state, payload):
+    user = state.get_user(payload.data.user_public_key)
     if user is None:
         raise InvalidTransaction('User with the public key {} does not '
                                  'exist'.format(payload.data.user_id))
-
-    # Talvez validar função de admin
-    # if not _validate_admin(signer_public_key=public_key):
-    #     raise InvalidTransaction(
-    #         'Transaction signer is not an admin')
+    
+    updated_by = payload.data.updated_by_admin_public_key
+    admin_public_key = _validate_admin(state, updated_by)
 
     _validate_quota(payload.data.quota)
 
     state.update_user(
         quota=payload.data.quota,
-        user_id=payload.data.user_id,
-        timestamp=payload.timestamp)
+        user_public_key=payload.data.user_public_key,
+        timestamp=payload.timestamp,
+        updated_by_admin_public_key=admin_public_key)
 
 
 def _create_sensor(state, public_key, payload):
@@ -150,6 +168,13 @@ def _update_sensor(state, public_key, payload):
         sensor_id=payload.data.sensor_id,
         timestamp=payload.timestamp)
 
+
+def _validate_admin(state, admin_public_key):
+    if not (state.get_admin(admin_public_key)):
+        raise InvalidTransaction('Admin with the public key {} already '
+                                 'exists'.format(admin_public_key))
+    
+    return admin_public_key
 
 def _validate_sensor_owner(signer_public_key, sensor):
     """Validates that the public key of the signer is the latest (i.e.

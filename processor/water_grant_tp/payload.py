@@ -30,6 +30,11 @@ class Payload(object):
 
     @property
     def data(self):
+        if self._transaction.HasField('create_admin') and \
+            self._transaction.action == \
+                payload_pb2.Payload.CREATE_ADMIN:
+            return self._transaction.create_admin
+
         if self._transaction.HasField('create_user') and \
             self._transaction.action == \
                 payload_pb2.Payload.CREATE_USER:
