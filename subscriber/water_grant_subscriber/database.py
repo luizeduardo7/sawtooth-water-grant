@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS auth (
     public_key            varchar PRIMARY KEY,
     username              varchar UNIQUE,
     hashed_password       varchar,
-    encrypted_private_key varchar
+    encrypted_private_key varchar,
+    admin                 boolean
 )
 """
 
@@ -103,7 +104,7 @@ CREATE TABLE IF NOT EXISTS admins (
     id               bigserial PRIMARY KEY,
     public_key       varchar,
     name             varchar,
-    timestamp        bigint,
+    created_at        bigint,
     start_block_num  bigint,
     end_block_num    bigint
 );
@@ -328,7 +329,7 @@ class Database(object):
     def insert_admin(self, admin_dict):
         print("NOVO USUARIO")
         update_admin = """
-        UPDATE adminss SET end_block_num = {}
+        UPDATE admins SET end_block_num = {}
         WHERE end_block_num = {} AND public_key = '{}'
         """.format(
             admin_dict['start_block_num'],
@@ -336,10 +337,10 @@ class Database(object):
             admin_dict['public_key'])
 
         insert_admin = """
-        INSERT INTO adminss (
+        INSERT INTO admins (
         public_key,
         name,
-        timestamp,
+        created_at,
         quota,
         start_block_num,
         end_block_num)

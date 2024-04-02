@@ -95,6 +95,30 @@ class Database(object):
             await cursor.execute(insert)
 
         self._conn.commit()
+        
+    async def fetch_admin_resource(self, public_key):
+        fetch = """
+        SELECT public_key, name, created_at
+        FROM admins
+        WHERE public_key='{0}'
+        AND ({1}) >= start_block_num
+        AND ({1}) < end_block_num;
+        """.format(public_key, LATEST_BLOCK_NUM)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            await cursor.execute(fetch)
+            return await cursor.fetchone()
+        
+    async def fetch_all_admin_resources(self):
+        fetch = """
+        SELECT public_key, name, created_at FROM admins
+        WHERE ({0}) >= start_block_num
+        AND ({0}) < end_block_num;
+        """.format(LATEST_BLOCK_NUM)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            await cursor.execute(fetch)
+            return await cursor.fetchall()
 
 
     async def fetch_user_resource(self, public_key):

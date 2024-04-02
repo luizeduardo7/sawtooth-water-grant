@@ -37,6 +37,9 @@ message CreateUserAction {
 
     //  Initial quota of the user
     double quota = 2;
+
+    // Admin public key
+    string created_by_admin_public_key = 3;
 }
 
 message UpdateUserAction {
@@ -45,6 +48,9 @@ message UpdateUserAction {
 
     // New quota
     double quota = 2;
+
+    // Admin public key
+    string updated_by_admin_public_key = 3;
 }
 
 
