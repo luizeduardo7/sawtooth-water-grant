@@ -85,16 +85,29 @@ CREATE TABLE IF NOT EXISTS sensor_owners (
 
 CREATE_USER_STMTS = """
 CREATE TABLE IF NOT EXISTS users (
+    id                           bigserial PRIMARY KEY,
+    public_key                   varchar,
+    name                         varchar,
+    created_at                   bigint,
+    quota                        float,
+    created_by_admin_public_key  varchar,
+    updated_by_admin_public_key  varchar,
+    updated_at                   bigint,
+    start_block_num              bigint,
+    end_block_num                bigint
+);
+"""
+
+CREATE_ADMIN_STMTS = """
+CREATE TABLE IF NOT EXISTS admins (
     id               bigserial PRIMARY KEY,
     public_key       varchar,
     name             varchar,
     timestamp        bigint,
-    quota            float,
     start_block_num  bigint,
     end_block_num    bigint
 );
 """
-
 
 class Database(object):
     """Simple object for managing a connection to a postgres database
@@ -156,6 +169,9 @@ class Database(object):
             print('Creating table: users')
             cursor.execute(CREATE_USER_STMTS)
 
+            print('Creating table: admins')
+            cursor.execute(CREATE_ADMIN_STMTS)
+
         self._conn.commit()
 
     def disconnect(self):
@@ -180,6 +196,15 @@ class Database(object):
         
         update_users = """
         UPDATE users SET end_block_num = null
+        WHERE end_block_num >= {}
+        """.format(block_num)
+
+        delete_admins = """
+        DELETE FROM admins WHERE start_block_num >= {}
+        """.format(block_num)
+        
+        update_admins = """
+        UPDATE admins SET end_block_num = null
         WHERE end_block_num >= {}
         """.format(block_num)
 
@@ -214,6 +239,8 @@ class Database(object):
         with self._conn.cursor() as cursor:
             cursor.execute(delete_users)
             cursor.execute(update_users)
+            cursor.execute(delete_admins)
+            cursor.execute(update_admins)
             cursor.execute(delete_measurements)
             cursor.execute(delete_sensor_locations)
             cursor.execute(delete_sensor_owners)
@@ -273,22 +300,60 @@ class Database(object):
         INSERT INTO users (
         public_key,
         name,
-        timestamp,
+        created_at,
         quota,
+        created_by_admin_public_key,
+        updated_by_admin_public_key,
+        updated_at,
         start_block_num,
         end_block_num)
         VALUES ('{}', '{}', '{}', '{}', '{}', '{}');
         """.format(
             user_dict['public_key'],
             user_dict['name'],
-            user_dict['timestamp'],
+            user_dict['created_at'],
             user_dict['quota'],
+            user_dict['created_by_admin_public_key'],
+            user_dict['updated_by_admin_public_key'],
+            user_dict['updated_at'],
             user_dict['start_block_num'],
             user_dict['end_block_num'])
 
         with self._conn.cursor() as cursor:
             cursor.execute(update_user)
             cursor.execute(insert_user)
+        print("NOVO USUARIO FINALIZADO")
+    
+
+    def insert_admin(self, admin_dict):
+        print("NOVO USUARIO")
+        update_admin = """
+        UPDATE adminss SET end_block_num = {}
+        WHERE end_block_num = {} AND public_key = '{}'
+        """.format(
+            admin_dict['start_block_num'],
+            admin_dict['end_block_num'],
+            admin_dict['public_key'])
+
+        insert_admin = """
+        INSERT INTO adminss (
+        public_key,
+        name,
+        timestamp,
+        quota,
+        start_block_num,
+        end_block_num)
+        VALUES ('{}', '{}', '{}', '{}', '{}', '{}');
+        """.format(
+            admin_dict['public_key'],
+            admin_dict['name'],
+            admin_dict['timestamp'],
+            admin_dict['start_block_num'],
+            admin_dict['end_block_num'])
+
+        with self._conn.cursor() as cursor:
+            cursor.execute(update_admin)
+            cursor.execute(insert_admin)
         print("NOVO USUARIO FINALIZADO")
 
     def insert_sensor(self, sensor_dict):

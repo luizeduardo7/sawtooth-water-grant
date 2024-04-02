@@ -82,7 +82,9 @@ def _apply_state_changes(database, events, block_num, block_id):
     for change in changes:
         data_type, resources = deserialize_data(change.address, change.value)
         database.insert_block({'block_num': block_num, 'block_id': block_id})
-        if data_type == AddressSpace.USER:
+        if data_type == AddressSpace.ADMIN:
+            _apply_admin_change(database, block_num, resources)
+        elif data_type == AddressSpace.USER:
             _apply_user_change(database, block_num, resources)
         elif data_type == AddressSpace.SENSOR:
             _apply_sensor_change(database, block_num, resources)
@@ -101,6 +103,14 @@ def _parse_state_changes(events):
     state_change_list.ParseFromString(change_data)
     return [c for c in state_change_list.state_changes
             if NAMESPACE_REGEX.match(c.address)]
+
+
+def _apply_admin_change(database, block_num, admins):
+    print("NOVO ADMIN")
+    for admin in admins:
+        admin['start_block_num'] = block_num
+        admin['end_block_num'] = MAX_BLOCK_NUMBER
+        database.insert_admin(admin)
 
 
 def _apply_user_change(database, block_num, users):
