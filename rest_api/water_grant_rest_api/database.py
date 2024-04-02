@@ -71,6 +71,7 @@ class Database(object):
         """
         self._conn.close()
 
+
     async def create_auth_entry(self,
                                 public_key,
                                 username,
@@ -95,9 +96,12 @@ class Database(object):
 
         self._conn.commit()
 
+
     async def fetch_user_resource(self, public_key):
         fetch = """
-        SELECT public_key, name, timestamp, quota FROM users
+        SELECT public_key, name, created_at, quota, created_by_admin_public_key,
+        updated_by_admin_public_key, updated_at
+        FROM users
         WHERE public_key='{0}'
         AND ({1}) >= start_block_num
         AND ({1}) < end_block_num;
@@ -109,7 +113,7 @@ class Database(object):
 
     async def fetch_all_user_resources(self):
         fetch = """
-        SELECT public_key, name, timestamp FROM users
+        SELECT public_key, name, created_at FROM users
         WHERE ({0}) >= start_block_num
         AND ({0}) < end_block_num;
         """.format(LATEST_BLOCK_NUM)
