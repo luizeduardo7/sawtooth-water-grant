@@ -92,7 +92,7 @@ def start_rest_api(host, port, messenger, database):
     handler = RouteHandler(loop, messenger, database)
 
     app.router.add_post('/authentication', handler.authenticate)
-    app.router.add_post('/admin', handler.create_admin)
+    app.router.add_post('/admins', handler.create_admin)
     app.router.add_post('/users', handler.create_user)
     app.router.add_get('/users', handler.list_users)
     app.router.add_get('/users/{user_id}', handler.fetch_user)

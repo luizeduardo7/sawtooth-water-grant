@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS auth (
     username              varchar UNIQUE,
     hashed_password       varchar,
     encrypted_private_key varchar,
-    admin                 boolean
+    is_admin              boolean
 )
 """
 

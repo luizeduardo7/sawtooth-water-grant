@@ -76,20 +76,23 @@ class Database(object):
                                 public_key,
                                 username,
                                 encrypted_private_key,
-                                hashed_password):
+                                hashed_password,
+                                is_admin):
         insert = """
         INSERT INTO auth (
             public_key,
             username,
             encrypted_private_key,
-            hashed_password
+            hashed_password,
+            is_admin
         )
         VALUES ('{}', '{}', '{}', '{}');
         """.format(
             public_key,
             username,
             encrypted_private_key.hex(),
-            hashed_password.hex())
+            hashed_password.hex(),
+            is_admin)
 
         async with self._conn.cursor() as cursor:
             await cursor.execute(insert)

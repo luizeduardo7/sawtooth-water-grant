@@ -59,6 +59,8 @@ class RouteHandler(object):
         return json_response({'authorization': token})
     
     async def create_admin(self, request):
+        await self._authorize(request)
+        
         body = await decode_request(request)
         required_fields = ['username', 'name', 'password']
         validate_fields(required_fields, body)
@@ -77,7 +79,11 @@ class RouteHandler(object):
         hashed_password = hash_password(body.get('password'))
 
         await self._database.create_auth_entry(
-            public_key, username, encrypted_private_key, hashed_password)
+            public_key,
+            username, 
+            encrypted_private_key, 
+            hashed_password,
+            is_admin=True)
         
         # Se a criação da auth for bem sucedida, a transação é
         # criada na blockchain
@@ -92,6 +98,8 @@ class RouteHandler(object):
         return json_response({'authorization': token})
 
     async def create_user(self, request):
+        await self._authorize(request)
+
         body = await decode_request(request)
         required_fields = ['username', 'name', 'password', 'created_by_admin_public_key']
         validate_fields(required_fields, body)
@@ -110,7 +118,11 @@ class RouteHandler(object):
         hashed_password = hash_password(body.get('password'))
     
         await self._database.create_auth_entry(
-            public_key, username, encrypted_private_key, hashed_password)
+            public_key,
+            username, 
+            encrypted_private_key, 
+            hashed_password,
+            is_admin=False)
         
         # Se a criação da auth for bem sucedida, a transação é
         # criada na blockchain
@@ -139,11 +151,14 @@ class RouteHandler(object):
         return json_response(user)
     
     async def update_user(self, request):
+        # Primeira validação, verifica se há a nova cota e
+        # a chave pública do admin na requisição
+        required_fields = ['quota', 'updated_by_admin_public_key']
+        validate_fields(required_fields, body)
+
         private_key = await self._authorize(request)
 
         body = await decode_request(request)
-        required_fields = ['quota', 'updated_by_admin_public_key']
-        validate_fields(required_fields, body)
 
         user_public_key = request.match_info.get('user_public_key', '')
 
@@ -221,8 +236,15 @@ class RouteHandler(object):
         
         public_key = token_dict.get('public_key')
         body = await decode_request(request)
+
+        # Verifica se é há um chave de admin válida
+        admin_auth = await self._database.fetch_auth_resource(public_key)
+        if admin_auth is None:
+            raise ApiUnauthorized('Token não está associado com um usuário.')
+
+        # Verifica se trata da operação de atualização de usuário
         if body.get('user_public_key'):
-            public_key = body.get('user_public_key')
+            public_key = body.get('user_public_key')  
 
         auth_resource = await self._database.fetch_auth_resource(public_key)
         if auth_resource is None:
@@ -278,42 +300,42 @@ def deserialize_auth_token(secret_key, token):
     serializer = Serializer(secret_key)
     return serializer.loads(token)
 
-    # Transferência de sensores desativada.
-    # async def transfer_sensor(self, request):
-    #     private_key = await self._authorize(request)
+# Transferência de sensores desativada.
+# async def transfer_sensor(self, request):
+#     private_key = await self._authorize(request)
 
-    #     body = await decode_request(request)
-    #     required_fields = ['receiving_user']
-    #     validate_fields(required_fields, body)
+#     body = await decode_request(request)
+#     required_fields = ['receiving_user']
+#     validate_fields(required_fields, body)
 
-    #     sensor_id = request.match_info.get('sensor_id', '')
+#     sensor_id = request.match_info.get('sensor_id', '')
 
-    #     await self._messenger.send_transfer_sensor_transaction(
-    #         private_key=private_key,
-    #         receiving_user=body['receiving_user'],
-    #         sensor_id=sensor_id,
-    #         timestamp=get_time())
+#     await self._messenger.send_transfer_sensor_transaction(
+#         private_key=private_key,
+#         receiving_user=body['receiving_user'],
+#         sensor_id=sensor_id,
+#         timestamp=get_time())
 
-    #     return json_response(
-    #         {'data': 'Transfer sensor transaction submitted'})
+#     return json_response(
+#         {'data': 'Transfer sensor transaction submitted'})
 
-    # Antigo sensor update
-    # async def update_sensor(self, request):
-    #     private_key = await self._authorize(request)
+# Antigo sensor update
+# async def update_sensor(self, request):
+#     private_key = await self._authorize(request)
 
-    #     body = await decode_request(request)
-    #     required_fields = ['latitude', 'longitude', 'measurement']
-    #     validate_fields(required_fields, body)
+#     body = await decode_request(request)
+#     required_fields = ['latitude', 'longitude', 'measurement']
+#     validate_fields(required_fields, body)
 
-    #     sensor_id = request.match_info.get('sensor_id', '')
+#     sensor_id = request.match_info.get('sensor_id', '')
 
-    #     await self._messenger.send_update_sensor_transaction(
-    #         private_key=private_key,
-    #         latitude=body['latitude'],
-    #         longitude=body['longitude'],
-    #         measurement=body['measurement'],
-    #         sensor_id=sensor_id,
-    #         timestamp=get_time())
+#     await self._messenger.send_update_sensor_transaction(
+#         private_key=private_key,
+#         latitude=body['latitude'],
+#         longitude=body['longitude'],
+#         measurement=body['measurement'],
+#         sensor_id=sensor_id,
+#         timestamp=get_time())
 
-    #     return json_response(
-    #         {'data': 'Update sensor transaction submitted'})
+#     return json_response(
+#         {'data': 'Update sensor transaction submitted'})
