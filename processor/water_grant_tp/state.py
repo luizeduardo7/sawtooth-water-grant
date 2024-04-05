@@ -50,19 +50,19 @@ class WaterGrantState(object):
             self,
             public_key,
             name,
-            timestamp):
+            created_at):
         """Creates a new admin in state
 
         Args:
             public_key (str): The public key of the admin
             name (str): The human-readable name of the admin
-            timestamp (int): Unix UTC timestamp of when the admin was created
+            created_at (int): Unix UTC timestamp of when the admin was created
         """
         address = addresser.get_admin_address(public_key)
         admin = admin_pb2.Admin(
             public_key=public_key,
             name=name,
-            created_at=timestamp,)
+            created_at=created_at)
         container = admin_pb2.AdminContainer()
         state_entries = self._context.get_state(
             addresses=[address], timeout=self._timeout)

@@ -54,6 +54,7 @@ const loggedInNav = () => {
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
+    navigation.link('/signup', 'Criar Usuário'),
     navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
   ])
@@ -66,7 +67,7 @@ const loggedOutNav = () => {
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
-    navigation.button('/login', 'Log in/Criar conta')
+    navigation.button('/login', 'Log in')
   ])
 }
 

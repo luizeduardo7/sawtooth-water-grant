@@ -347,7 +347,7 @@ class Database(object):
         """.format(
             admin_dict['public_key'],
             admin_dict['name'],
-            admin_dict['timestamp'],
+            admin_dict['created_at'],
             admin_dict['start_block_num'],
             admin_dict['end_block_num'])
 

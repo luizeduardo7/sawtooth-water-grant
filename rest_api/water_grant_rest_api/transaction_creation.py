@@ -81,7 +81,7 @@ def make_create_user_transaction(transaction_signer,
         batch_pb2.Batch: The transaction wrapped in a batch
 
     """
-
+    print('No transaction_creation.py')
     user_address = addresser.get_user_address(
         transaction_signer.get_public_key().as_hex())
 

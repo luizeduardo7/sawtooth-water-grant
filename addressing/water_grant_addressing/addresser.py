@@ -56,7 +56,7 @@ def get_address_type(address):
     infix = address[6:8]
 
     if infix == '00':
-        return AddressSpace.AMDIN
+        return AddressSpace.ADMIN
     if infix == '01':
         return AddressSpace.USER
     if infix == '02':

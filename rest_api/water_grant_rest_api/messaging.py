@@ -64,7 +64,6 @@ class Messenger(object):
                                             timestamp):
         transaction_signer = self._crypto_factory.new_signer(
             secp256k1.Secp256k1PrivateKey.from_hex(private_key))
-
         batch = make_create_admin_transaction(
             transaction_signer=transaction_signer,
             batch_signer=self._batch_signer,
@@ -76,17 +75,17 @@ class Messenger(object):
                                             private_key,
                                             name,
                                             timestamp,
-                                            created_by_admin_public_key):
+                                            admin_public_key):
         transaction_signer = self._crypto_factory.new_signer(
             secp256k1.Secp256k1PrivateKey.from_hex(private_key))
-
+        print('No messaging.py')
         batch = make_create_user_transaction(
             transaction_signer=transaction_signer,
             batch_signer=self._batch_signer,
             name=name,
             timestamp=timestamp,
             quota=0,
-            admin_public_key=created_by_admin_public_key)
+            admin_public_key=admin_public_key)
         await self._send_and_wait_for_commit(batch)
 
     async def send_update_user_transaction(self,

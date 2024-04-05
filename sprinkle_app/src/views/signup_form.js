@@ -26,8 +26,11 @@ const api = require('../services/api')
 const userSubmitter = state => e => {
   e.preventDefault()
 
-  const userKeys = ['username', 'name', 'password']
+  const userKeys = ['username', 'name', 'password', 'created_by_admin_public_key']
   const user = _.pick(state, userKeys)
+
+  // Inclue created_by_admin_public_key no objeto do usuário
+  user.created_by_admin_public_key = api.getPublicKey()
 
   api.post('users', user)
     .then(res => api.setAuth(res.authorization))
@@ -45,11 +48,6 @@ const SignupForm = {
       forms.textInput(setter('username'), 'Username'),
       forms.textInput(setter('name'), 'Nome'),
       forms.passwordInput(setter('password'), 'Senha'),
-      m('.container.text-center',
-        'Ou você pode ',
-        m('a[href="/login"]',
-          { oncreate: m.route.link },
-          'logar como um usuário existente')),
       m('.form-group',
         m('.row.justify-content-end.align-items-end',
           m('col-2',
