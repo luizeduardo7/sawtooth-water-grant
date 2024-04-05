@@ -308,7 +308,7 @@ class Database(object):
         updated_at,
         start_block_num,
         end_block_num)
-        VALUES ('{}', '{}', '{}', '{}', '{}', '{}');
+        VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}');
         """.format(
             user_dict['public_key'],
             user_dict['name'],
@@ -327,7 +327,7 @@ class Database(object):
     
 
     def insert_admin(self, admin_dict):
-        print("NOVO USUARIO")
+        print("NOVO ADMIN")
         update_admin = """
         UPDATE admins SET end_block_num = {}
         WHERE end_block_num = {} AND public_key = '{}'
@@ -341,10 +341,9 @@ class Database(object):
         public_key,
         name,
         created_at,
-        quota,
         start_block_num,
         end_block_num)
-        VALUES ('{}', '{}', '{}', '{}', '{}', '{}');
+        VALUES ('{}', '{}', '{}', '{}', '{}');
         """.format(
             admin_dict['public_key'],
             admin_dict['name'],
@@ -355,7 +354,7 @@ class Database(object):
         with self._conn.cursor() as cursor:
             cursor.execute(update_admin)
             cursor.execute(insert_admin)
-        print("NOVO USUARIO FINALIZADO")
+        print("NOVO ADMIN FINALIZADO")
 
     def insert_sensor(self, sensor_dict):
         update_sensor = """

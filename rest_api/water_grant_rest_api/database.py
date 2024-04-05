@@ -86,7 +86,7 @@ class Database(object):
             hashed_password,
             is_admin
         )
-        VALUES ('{}', '{}', '{}', '{}');
+        VALUES ('{}', '{}', '{}', '{}', '{}');
         """.format(
             public_key,
             username,

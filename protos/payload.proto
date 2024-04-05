@@ -23,7 +23,7 @@ message Payload{
     UpdateSensorAction update_sensor = 6;
 
     // Approximately when transaction was submitted, as a Unix UTC timestamp
-    uint64 timestamp = 6;
+    uint64 timestamp = 7;
 }
 
 message CreateAdminAction {
