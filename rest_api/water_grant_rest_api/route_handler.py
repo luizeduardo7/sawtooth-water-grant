@@ -103,7 +103,8 @@ class RouteHandler(object):
         body = await decode_request(request)
         required_fields = ['username', 'name', 'password', 'created_by_admin_public_key']
         validate_fields(required_fields, body)
-
+        await validate_admin(body.get('created_by_admin_public_key'), self._database)
+        
         public_key, private_key = self._messenger.get_new_key_pair()
 
         username = body.get('username')
@@ -254,6 +255,13 @@ class RouteHandler(object):
                                    auth_resource['encrypted_private_key'])
 
 
+async def validate_admin(admin_public_key, database):
+        auth_resource = await database.fetch_auth_resource(admin_public_key)
+        print(auth_resource['is_admin'])
+        print(type(auth_resource['is_admin']))
+        if auth_resource['is_admin'] is False:
+            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+
 async def decode_request(request):
     try:
         return await request.json()
@@ -266,7 +274,6 @@ def validate_fields(required_fields, body):
         if body.get(field) is None:
             raise ApiBadRequest(
                 "O parâmetro '{}' é requerido.".format(field))
-
 
 def encrypt_private_key(aes_key, public_key, private_key):
     init_vector = bytes.fromhex(public_key[:32])

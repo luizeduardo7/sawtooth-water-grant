@@ -99,7 +99,9 @@ def _create_user(state, public_key, payload):
                                  'exists'.format(public_key))
     
     created_by = payload.data.created_by_admin_public_key
-    admin_public_key = _validate_admin(state, created_by)
+    if not (state.get_admin(created_by)):
+        raise InvalidTransaction('Admin with the public key {} not '
+                                 'exists'.format(created_by))
 
     state.set_user(
         public_key=public_key,
@@ -168,13 +170,6 @@ def _update_sensor(state, public_key, payload):
         sensor_id=payload.data.sensor_id,
         timestamp=payload.timestamp)
 
-
-def _validate_admin(state, admin_public_key):
-    if not (state.get_admin(admin_public_key)):
-        raise InvalidTransaction('Admin with the public key {} already '
-                                 'exists'.format(admin_public_key))
-    
-    return admin_public_key
 
 def _validate_sensor_owner(signer_public_key, sensor):
     """Validates that the public key of the signer is the latest (i.e.

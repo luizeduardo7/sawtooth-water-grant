@@ -101,7 +101,7 @@ class WaterGrantState(object):
             self,
             public_key,
             name,
-            timestamp,
+            created_at,
             quota,
             created_by_admin_public_key):
         """Creates a new user in state
@@ -117,10 +117,10 @@ class WaterGrantState(object):
         user = user_pb2.User(
             public_key=public_key,
             name=name,
-            created_at=timestamp,
+            created_at=created_at,
             quota=quota,
             created_by_admin_public_key=created_by_admin_public_key,
-            updated_by_admin_public_key=None)
+            updated_by_admin_public_key="")
         container = user_pb2.UserContainer()
         state_entries = self._context.get_state(
             addresses=[address], timeout=self._timeout)
