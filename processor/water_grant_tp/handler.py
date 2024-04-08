@@ -98,10 +98,11 @@ def _create_user(state, public_key, payload):
         raise InvalidTransaction('User with the public key {} already '
                                  'exists'.format(public_key))
     
-    created_by = payload.data.created_by_admin_public_key
-    if not (state.get_admin(created_by)):
-        raise InvalidTransaction('Admin with the public key {} not '
-                                 'exists'.format(created_by))
+    admin_public_key = payload.data.created_by_admin_public_key
+    admin = state.get_admin(admin_public_key)
+    if admin is None:
+        raise InvalidTransaction('Admin with the public key {} does not '
+                                 'exists'.format(admin_public_key))
 
     state.set_user(
         public_key=public_key,

@@ -85,8 +85,7 @@ class RouteHandler(object):
             hashed_password,
             is_admin=True)
         
-        # Se a criação da auth for bem sucedida, a transação é
-        # criada na blockchain
+        # Inserir um Try, caso falhar deletar auth correspondente
         await self._messenger.send_create_admin_transaction(
             private_key=private_key,
             name=body.get('name'),
@@ -103,13 +102,18 @@ class RouteHandler(object):
         body = await decode_request(request)
         required_fields = ['username', 'name', 'password', 'created_by_admin_public_key']
         validate_fields(required_fields, body)
-        await validate_admin(body.get('created_by_admin_public_key'), self._database)
+
+        # Valida se há permissão de admin
+        admin_public_key = body.get('created_by_admin_public_key')
+        admin_auth_info = await self._database.fetch_auth_resource(admin_public_key)
+        if admin_auth_info['is_admin'] is False:
+            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
         
         public_key, private_key = self._messenger.get_new_key_pair()
 
         username = body.get('username')
-        auth_info = await self._database.fetch_auth_resource(username)
-        if auth_info is not None:
+        user_auth_info = await self._database.fetch_auth_resource(username)
+        if user_auth_info is not None:
             raise ApiUnauthorized(
                 'Já existe um usuário com esse username.'
                 'Por favor, insira outro.')
@@ -131,7 +135,7 @@ class RouteHandler(object):
             private_key=private_key,
             name=body.get('name'),
             timestamp=get_time(),
-            admin_public_key=body.get('created_by_admin_public_key'))
+            admin_public_key=admin_public_key)
 
         token = generate_auth_token(
             request.app['secret_key'], public_key)
@@ -156,6 +160,12 @@ class RouteHandler(object):
         # a chave pública do admin na requisição
         required_fields = ['quota', 'updated_by_admin_public_key']
         validate_fields(required_fields, body)
+
+         # Valida se há permissão de admin
+        admin_public_key = body.get('updated_by_admin_public_key')
+        admin_auth_info = await self._database.fetch_auth_resource(admin_public_key)
+        if admin_auth_info['is_admin'] is False:
+            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
 
         private_key = await self._authorize(request)
 
