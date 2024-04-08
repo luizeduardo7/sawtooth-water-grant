@@ -98,7 +98,20 @@ class Database(object):
             await cursor.execute(insert)
 
         self._conn.commit()
-        
+    
+    
+    async def delete_auth_entry(self,
+                                public_key):
+        remove = """
+        DELETE FROM auth WHERE public_key = '{0}'
+        """.format(public_key)
+
+        async with self._conn.cursor() as cursor:
+            await cursor.execute(remove)
+
+        self._conn.commit()
+
+
     async def fetch_admin_resource(self, public_key):
         fetch = """
         SELECT public_key, name, created_at
@@ -177,7 +190,7 @@ class Database(object):
         """.format(sensor_id, LATEST_BLOCK_NUM)
 
         fetch_sensor_owners = """
-        SELECT user_id, timestamp FROM sensor_owners
+        SELECT user_public_key, timestamp FROM sensor_owners
         WHERE sensor_id='{0}'
         AND ({1}) >= start_block_num
         AND ({1}) < end_block_num;
@@ -230,7 +243,7 @@ class Database(object):
                     """.format(sensor['sensor_id'], LATEST_BLOCK_NUM)
 
                     fetch_sensor_owners = """
-                    SELECT user_id, timestamp
+                    SELECT user_public_key, timestamp
                     FROM sensor_owners
                     WHERE sensor_id='{0}'
                     AND ({1}) >= start_block_num

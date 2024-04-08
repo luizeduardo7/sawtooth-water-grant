@@ -77,7 +77,7 @@ CREATE_SENSOR_OWNER_STMTS = """
 CREATE TABLE IF NOT EXISTS sensor_owners (
     id               bigserial PRIMARY KEY,
     sensor_id        varchar,
-    user_id          varchar,
+    user_public_key          varchar,
     timestamp        bigint,
     start_block_num  bigint,
     end_block_num    bigint
@@ -462,14 +462,14 @@ class Database(object):
                 """
                 INSERT INTO sensor_owners (
                 sensor_id,
-                user_id,
+                user_public_key,
                 timestamp,
                 start_block_num,
                 end_block_num)
                 VALUES ('{}', '{}', '{}', '{}', '{}');
                 """.format(
                     sensor_dict['sensor_id'],
-                    owner['user_id'],
+                    owner['user_public_key'],
                     owner['timestamp'],
                     sensor_dict['start_block_num'],
                     sensor_dict['end_block_num'])

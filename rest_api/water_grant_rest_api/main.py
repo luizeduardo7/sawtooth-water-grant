@@ -95,8 +95,8 @@ def start_rest_api(host, port, messenger, database):
     app.router.add_post('/admins', handler.create_admin)
     app.router.add_post('/users', handler.create_user)
     app.router.add_get('/users', handler.list_users)
-    app.router.add_get('/users/{user_id}', handler.fetch_user)
-    app.router.add_post('/users/{user_id}/update', handler.update_user)
+    app.router.add_get('/users/{user_public_key}', handler.fetch_user)
+    app.router.add_post('/users/{user_public_key}/update', handler.update_user)
 
     app.router.add_post('/sensors', handler.create_sensor)
     app.router.add_get('/sensors', handler.list_sensors)

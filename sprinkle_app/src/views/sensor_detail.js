@@ -74,7 +74,7 @@ const SensorDetailPage = {
     const updated = new Date(
       _.get(_.maxBy(coordinates, 'timestamp'), 'timestamp') * 1000).toString()
     const owners = _.get(vnode.state, 'sensor.owners', [])
-    const owner = _.get(_.maxBy(owners, 'timestamp'), 'user_id', '')
+    const owner = _.get(_.maxBy(owners, 'timestamp'), 'user_public_key', '')
     const measurements = _.get(vnode.state, 'sensor.measurements', [])
     const measurement = _.get(_.maxBy(measurements, 'timestamp'), 'measurement', '')
 

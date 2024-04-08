@@ -85,11 +85,17 @@ class RouteHandler(object):
             hashed_password,
             is_admin=True)
         
-        # Inserir um Try, caso falhar deletar auth correspondente
-        await self._messenger.send_create_admin_transaction(
-            private_key=private_key,
-            name=body.get('name'),
-            timestamp=get_time())
+        try:
+            await self._messenger.send_create_admin_transaction(
+                private_key=private_key,
+                name=body.get('name'),
+                timestamp=get_time())
+        except:
+            # Caso a transação não seja valida, a conta é removida da
+            # tabela auth
+            await self._database.delete_auth_entry(public_key)
+            raise ApiUnauthorized(
+                'Transação invalida')
 
         token = generate_auth_token(
             request.app['secret_key'], public_key)
@@ -129,13 +135,18 @@ class RouteHandler(object):
             hashed_password,
             is_admin=False)
         
-        # Se a criação da auth for bem sucedida, a transação é
-        # criada na blockchain
-        await self._messenger.send_create_user_transaction(
-            private_key=private_key,
-            name=body.get('name'),
-            timestamp=get_time(),
-            admin_public_key=admin_public_key)
+        try:
+            await self._messenger.send_create_user_transaction(
+                private_key=private_key,
+                name=body.get('name'),
+                timestamp=get_time(),
+                admin_public_key=admin_public_key)
+        except:
+            # Caso a transação não seja valida, a conta é removida da
+            # tabela auth
+            await self._database.delete_auth_entry(public_key)
+            raise ApiUnauthorized(
+                'Transação invalida')
 
         token = generate_auth_token(
             request.app['secret_key'], public_key)
@@ -147,7 +158,7 @@ class RouteHandler(object):
         return json_response(user_list)
 
     async def fetch_user(self, request):
-        public_key = request.match_info.get('user_id', '')
+        public_key = request.match_info.get('user_public_key', '')
         user = await self._database.fetch_user_resource(public_key)
         if user is None:
             raise ApiNotFound(

@@ -116,7 +116,7 @@ def _update_user(state, payload):
     user = state.get_user(payload.data.user_public_key)
     if user is None:
         raise InvalidTransaction('User with the public key {} does not '
-                                 'exist'.format(payload.data.user_id))
+                                 'exist'.format(payload.data.user_public_key))
     
     updated_by = payload.data.updated_by_admin_public_key
     admin_public_key = _validate_admin(state, updated_by)
@@ -176,7 +176,7 @@ def _validate_sensor_owner(signer_public_key, sensor):
     """Validates that the public key of the signer is the latest (i.e.
     current) owner of the sensor
     """
-    latest_owner = max(sensor.owners, key=lambda obj: obj.timestamp).user_id
+    latest_owner = max(sensor.owners, key=lambda obj: obj.timestamp).user_public_key
     return latest_owner == signer_public_key
 
 

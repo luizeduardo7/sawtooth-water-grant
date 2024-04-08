@@ -121,7 +121,7 @@ def make_update_user_transaction(transaction_signer,
         transaction_signer (sawtooth_signing.Signer): The transaction key pair
         batch_signer (sawtooth_signing.Signer): The batch key pair
         quota: New quota of the user
-        user_id (str): User public key
+        user_public_key (str): User public key
         timestamp (int): Unix UTC timestamp of when the user is updated
         admin_public_key (str): Admin Public key that updated user
 
