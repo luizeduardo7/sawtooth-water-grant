@@ -93,7 +93,7 @@ class Messenger(object):
                                              quota,
                                              user_public_key,
                                              timestamp,
-                                             updated_by_admin_public_key):
+                                             admin_public_key):
         transaction_signer = self._crypto_factory.new_signer(
             secp256k1.Secp256k1PrivateKey.from_hex(private_key))
         batch = make_update_user_transaction(
@@ -102,7 +102,7 @@ class Messenger(object):
             quota=quota,
             user_public_key=user_public_key,
             timestamp=timestamp,
-            admin_public_key=updated_by_admin_public_key)
+            admin_public_key=admin_public_key)
         await self._send_and_wait_for_commit(batch)
 
     async def send_create_sensor_transaction(self,

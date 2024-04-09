@@ -131,7 +131,9 @@ def make_update_user_transaction(transaction_signer,
     user_address = addresser.get_user_address(
         transaction_signer.get_public_key().as_hex())
 
-    inputs = [user_address]
+    admin_address = addresser.get_admin_address(admin_public_key)
+
+    inputs = [user_address, admin_address]
 
     outputs = [user_address]
 

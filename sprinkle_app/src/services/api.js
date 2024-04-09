@@ -45,7 +45,10 @@ const getIsAdmin = () => {
   if (!isAdminFlag) {
     isAdminFlag = window.localStorage.getItem(ADMIN_FLAG)
   }
-  return isAdminFlag
+  if(isAdminFlag == "true"){
+    return true
+  }
+  return false
 }
 
 const setIsAdmin = adminFlag => {

@@ -171,6 +171,7 @@ class RouteHandler(object):
         return json_response(user)
     
     async def update_user(self, request):
+        body = await decode_request(request)
         # Primeira validação, verifica se há a nova cota e
         # a chave pública do admin na requisição
         required_fields = ['quota', 'updated_by_admin_public_key']
@@ -183,8 +184,6 @@ class RouteHandler(object):
             raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
 
         private_key = await self._authorize(request)
-
-        body = await decode_request(request)
 
         user_public_key = request.match_info.get('user_public_key', '')
 

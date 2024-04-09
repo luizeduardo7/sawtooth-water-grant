@@ -90,7 +90,7 @@ def start_rest_api(host, port, messenger, database):
     messenger.open_validator_connection()
 
     handler = RouteHandler(loop, messenger, database)
-
+    app.router.add_post('/sensors/{sensor_id}/update', handler.update_sensor)
     app.router.add_post('/authentication', handler.authenticate)
     app.router.add_post('/admins', handler.create_admin)
     app.router.add_post('/users', handler.create_user)
@@ -104,7 +104,7 @@ def start_rest_api(host, port, messenger, database):
     # Transferência de sensores desativada.
     # app.router.add_post(
     #     '/sensors/{sensor_id}/transfer', handler.transfer_sensor)
-    app.router.add_post('/sensors/{sensor_id}/update', handler.update_sensor)
+
 
     print('Starting Water Grant REST API on %s:%s', host, port)
     web.run_app(

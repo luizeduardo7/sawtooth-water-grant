@@ -68,7 +68,6 @@ class WaterGrantHandler(TransactionHandler):
         elif payload.action == payload_pb2.Payload.UPDATE_USER:
             _update_user(
                 state=state,
-                public_key=header.signer_public_key,
                 payload=payload)
         elif payload.action == payload_pb2.Payload.CREATE_SENSOR:
             _create_sensor(
@@ -118,8 +117,11 @@ def _update_user(state, payload):
         raise InvalidTransaction('User with the public key {} does not '
                                  'exist'.format(payload.data.user_public_key))
     
-    updated_by = payload.data.updated_by_admin_public_key
-    admin_public_key = _validate_admin(state, updated_by)
+    admin_public_key = payload.data.updated_by_admin_public_key
+    admin = state.get_admin(admin_public_key)
+    if admin is None:
+        raise InvalidTransaction('Admin with the public key {} does not '
+                                 'exists'.format(admin_public_key))
 
     _validate_quota(payload.data.quota)
 

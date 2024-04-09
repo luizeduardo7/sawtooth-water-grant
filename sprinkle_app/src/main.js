@@ -102,10 +102,11 @@ const resolve = (view, restricted = false) => {
 
   resolver.render = vnode => {
     if (api.getAuth()) {
-      if (api.getIsAdmin() == true) {
+      if (api.getIsAdmin()) {
         return m(Layout, { navbar: loggedInNavAsAdmin() }, m(view, vnode.attrs))
+      } else {
+        return m(Layout, { navbar: loggedInNavAsUser() }, m(view, vnode.attrs))
       }
-      return m(Layout, { navbar: loggedInNavAsUser() }, m(view, vnode.attrs))
     }
     return m(Layout, { navbar: loggedOutNav() }, m(view, vnode.attrs))
   }

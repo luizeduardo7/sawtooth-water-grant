@@ -29,9 +29,10 @@ const updateSubmitter = state => e => {
   e.preventDefault()
 
   const publicKey = _.get(state, 'user.public_key', '')
-  const updateKeys = ['quota']
+  const updateKeys = ['quota', 'updated_by_admin_public_key']
   const update = _.pick(state, updateKeys)
   update.quota = parsing.toFloat(update.quota)
+  update.updated_by_admin_public_key = api.getPublicKey()
 
   api.post(`users/${publicKey}/update`, update)
     .then(() => {
@@ -64,7 +65,8 @@ const UserDetailPage = {
         layout.row(layout.staticField('Registrado', timestamp)),
         layout.row(layout.staticField('Cota concedida (m³)', quota)),
         layout.row(
-          m('.update-form', [
+          (api.getIsAdmin())
+          ? m('.update-form', [
             m('form', { onsubmit: updateSubmitter(vnode.state, publicKey) },
             m('legend', 'Atualizar Cota'),
             layout.row([
@@ -80,7 +82,7 @@ const UserDetailPage = {
                   m('button.btn.btn-primary',
                     'Atualizar cota')))))
             ])
-        )
+          : '')
       )
     ]
   }
