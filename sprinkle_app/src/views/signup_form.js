@@ -33,8 +33,10 @@ const userSubmitter = state => e => {
   user.created_by_admin_public_key = api.getPublicKey()
 
   api.post('users', user)
-    .then(res => api.setAuth(res.authorization))
-    .then(() => m.route.set('/'))
+    .then(() => {
+      alert("Conta cadastrada com sucesso!");
+      window.location.reload();
+    })
     .catch(api.alertError)
 }
 

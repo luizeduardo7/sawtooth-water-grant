@@ -57,7 +57,6 @@ class RouteHandler(object):
             request.app['secret_key'], auth_info.get('public_key'))
         
         is_admin = auth_info.get('is_admin')
-        print('AQUIII: {}'.format(is_admin))
 
         return json_response({
             'authorization': token,

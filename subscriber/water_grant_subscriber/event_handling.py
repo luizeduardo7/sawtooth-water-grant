@@ -39,14 +39,15 @@ def get_events_handler(database):
 
 def _handle_events(database, events):
     block_num, block_id = _parse_new_block(events)
-    try:
-        is_duplicate = _resolve_if_forked(database, block_num, block_id)
-        if not is_duplicate:
-            _apply_state_changes(database, events, block_num, block_id)
-        database.commit()
-    except psycopg2.DatabaseError as err:
-        print('Unable to handle event: %s', err)
-        database.rollback()
+    if block_num is not None:
+        try:
+            is_duplicate = _resolve_if_forked(database, block_num, block_id)
+            if not is_duplicate:
+                _apply_state_changes(database, events, block_num, block_id)
+            database.commit()
+        except psycopg2.DatabaseError as err:
+            print('Unable to handle event: %s', err)
+            database.rollback()
 
 
 def _parse_new_block(events):

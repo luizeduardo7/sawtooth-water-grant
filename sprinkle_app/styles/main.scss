@@ -1,2 +1,12 @@
 @import "~bootstrap/scss/bootstrap";
 @import "~octicons/build/octicons.min";
+
+.navbar-admin {
+background-color: #0e0d0d; /* Defina a cor de fundo para admin (cinza) */
+/* Adicione outros estilos desejados para a navbar do admin */
+}
+
+.navbar-user {
+background-color:   #3d7e95; /* Defina a cor de fundo para usuário (azul) */
+/* Adicione outros estilos desejados para a navbar do usuário */
+}
