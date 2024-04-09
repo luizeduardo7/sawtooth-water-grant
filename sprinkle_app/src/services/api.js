@@ -21,7 +21,9 @@ const _ = require('lodash')
 
 const API_PATH = 'api/'
 const STORAGE_KEY = 'sprinkle.authorization'
+const ADMIN_FLAG = 'sprinkle.adminflag'
 let authToken = null
+let isAdminFlag = null
 
 /**
  * Getters and setters to handle the auth token both in memory and storage
@@ -39,10 +41,25 @@ const setAuth = token => {
   return authToken
 }
 
+const getIsAdmin = () => {
+  if (!isAdminFlag) {
+    isAdminFlag = window.localStorage.getItem(ADMIN_FLAG)
+  }
+  return isAdminFlag
+}
+
+const setIsAdmin = adminFlag => {
+  window.localStorage.setItem(ADMIN_FLAG, adminFlag)
+  isAdminFlag = adminFlag
+  return isAdminFlag
+}
+
 const clearAuth = () => {
   const token = getAuth()
   window.localStorage.clear(STORAGE_KEY)
+  window.localStorage.clear(ADMIN_FLAG)
   authToken = null
+
   return token
 }
 
@@ -96,6 +113,8 @@ const alertError = err => {
 module.exports = {
   getAuth,
   setAuth,
+  getIsAdmin,
+  setIsAdmin,
   clearAuth,
   getPublicKey,
   post,

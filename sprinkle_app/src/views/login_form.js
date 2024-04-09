@@ -40,6 +40,7 @@ const LoginForm = {
           api.post('authentication', credentials)
             .then(res => {
               api.setAuth(res.authorization)
+              api.setIsAdmin(res.adminflag)
               m.route.set('/')
             })
             .catch(api.alertError)

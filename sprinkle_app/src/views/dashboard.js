@@ -39,8 +39,8 @@ const Dashboard = {
         m('p',
           'Para usar o ',
           m('em', 'Outorga ANA'),
-          ', crie um novo usuário usando Log in/Criar conta na barra de navegação',
-          ' acima.'))
+          ', faça log in ou caso não possua conta, entre em contato conosco e',
+          ' peça o seu cadastro.'))
     ]
   }
 }

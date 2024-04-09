@@ -55,8 +55,13 @@ class RouteHandler(object):
 
         token = generate_auth_token(
             request.app['secret_key'], auth_info.get('public_key'))
+        
+        is_admin = auth_info.get('is_admin')
+        print('AQUIII: {}'.format(is_admin))
 
-        return json_response({'authorization': token})
+        return json_response({
+            'authorization': token,
+            'adminflag': is_admin})
     
     async def create_admin(self, request):
         await self._authorize(request)
