@@ -29,8 +29,9 @@ const updateSubmitter = state => e => {
   e.preventDefault()
 
   const publicKey = _.get(state, 'user.public_key', '')
-  const updateKeys = ['quota', 'updated_by_admin_public_key']
+  const updateKeys = ['user_public_key', 'quota', 'updated_by_admin_public_key']
   const update = _.pick(state, updateKeys)
+  update.user_public_key = publicKey
   update.quota = parsing.toFloat(update.quota)
   update.updated_by_admin_public_key = api.getPublicKey()
 
