@@ -102,6 +102,7 @@ const request = (method, endpoint, data) => {
  */
 const get = _.partial(request, 'GET')
 const post = _.partial(request, 'POST')
+const put = _.partial(request, 'PUT')
 
 /**
  * Sends the user an alert with the error message and reloads the page.
@@ -122,5 +123,6 @@ module.exports = {
   getPublicKey,
   post,
   get,
+  put,
   alertError
 }

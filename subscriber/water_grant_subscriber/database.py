@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS auth (
 CREATE_SENSOR_STMTS = """
 CREATE TABLE IF NOT EXISTS sensors (
     id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
+    sensor_id        varchar UNIQUE,
     timestamp        bigint,
     start_block_num  bigint,
     end_block_num    bigint
@@ -77,7 +77,7 @@ CREATE_SENSOR_OWNER_STMTS = """
 CREATE TABLE IF NOT EXISTS sensor_owners (
     id               bigserial PRIMARY KEY,
     sensor_id        varchar,
-    user_public_key          varchar,
+    user_public_key  varchar,
     timestamp        bigint,
     start_block_num  bigint,
     end_block_num    bigint
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS sensor_owners (
 CREATE_USER_STMTS = """
 CREATE TABLE IF NOT EXISTS users (
     id                           bigserial PRIMARY KEY,
-    public_key                   varchar,
+    public_key                   varchar UNIQUE,
     name                         varchar,
     created_at                   bigint,
     quota                        float,
@@ -102,9 +102,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE_ADMIN_STMTS = """
 CREATE TABLE IF NOT EXISTS admins (
     id               bigserial PRIMARY KEY,
-    public_key       varchar,
+    public_key       varchar UNIQUE,
     name             varchar,
-    created_at        bigint,
+    created_at       bigint,
     start_block_num  bigint,
     end_block_num    bigint
 );
@@ -288,7 +288,6 @@ class Database(object):
             cursor.execute(insert)
 
     def insert_user(self, user_dict):
-        print("NOVO USUARIO")
         update_user = """
         UPDATE users SET end_block_num = {}
         WHERE end_block_num = {} AND public_key = '{}'
@@ -299,31 +298,42 @@ class Database(object):
 
         insert_user = """
         INSERT INTO users (
-        public_key,
-        name,
-        created_at,
-        quota,
-        created_by_admin_public_key,
-        updated_by_admin_public_key,
-        updated_at,
-        start_block_num,
-        end_block_num)
-        VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}');
-        """.format(
-            user_dict['public_key'],
-            user_dict['name'],
-            user_dict['created_at'],
-            user_dict['quota'],
-            user_dict['created_by_admin_public_key'],
-            user_dict['updated_by_admin_public_key'],
-            user_dict['updated_at'],
-            user_dict['start_block_num'],
-            user_dict['end_block_num'])
+            public_key,
+            name,
+            created_at,
+            quota,
+            created_by_admin_public_key,
+            updated_by_admin_public_key,
+            updated_at,
+            start_block_num,
+            end_block_num
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (public_key) DO UPDATE
+        SET 
+            name = EXCLUDED.name,
+            created_at = EXCLUDED.created_at,
+            quota = EXCLUDED.quota,
+            created_by_admin_public_key = EXCLUDED.created_by_admin_public_key,
+            updated_by_admin_public_key = EXCLUDED.updated_by_admin_public_key,
+            updated_at = EXCLUDED.updated_at,
+            start_block_num = EXCLUDED.start_block_num,
+            end_block_num = EXCLUDED.end_block_num;
+        """
 
         with self._conn.cursor() as cursor:
             cursor.execute(update_user)
-            cursor.execute(insert_user)
-        print("NOVO USUARIO FINALIZADO")
+            cursor.execute(insert_user, (
+                user_dict['public_key'],
+                user_dict['name'],
+                user_dict['created_at'],
+                user_dict['quota'],
+                user_dict['created_by_admin_public_key'],
+                user_dict['updated_by_admin_public_key'],
+                user_dict['updated_at'],
+                user_dict['start_block_num'],
+                user_dict['end_block_num']
+            ))
     
 
     def insert_admin(self, admin_dict):

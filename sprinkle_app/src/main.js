@@ -53,7 +53,7 @@ const loggedInNavAsAdmin = () => {
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
-    navigation.link('/signup', 'Criar Usuário'),
+    navigation.link('/signup', 'Criar Conta'),
     // navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
   ])

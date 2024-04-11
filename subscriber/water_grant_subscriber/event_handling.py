@@ -107,7 +107,6 @@ def _parse_state_changes(events):
 
 
 def _apply_admin_change(database, block_num, admins):
-    print("NOVO ADMIN")
     for admin in admins:
         admin['start_block_num'] = block_num
         admin['end_block_num'] = MAX_BLOCK_NUMBER
@@ -115,7 +114,6 @@ def _apply_admin_change(database, block_num, admins):
 
 
 def _apply_user_change(database, block_num, users):
-    print("NOVO USUARIO")
     for user in users:
         user['start_block_num'] = block_num
         user['end_block_num'] = MAX_BLOCK_NUMBER
@@ -123,7 +121,6 @@ def _apply_user_change(database, block_num, users):
 
 
 def _apply_sensor_change(database, block_num, sensors):
-    print("NOVO SENSOR")
     for sensor in sensors:
         sensor['start_block_num'] = block_num
         sensor['end_block_num'] = MAX_BLOCK_NUMBER
