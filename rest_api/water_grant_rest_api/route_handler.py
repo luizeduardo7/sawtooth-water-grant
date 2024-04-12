@@ -317,7 +317,7 @@ def hash_password(password):
 
 
 def get_time():
-    dts = datetime.datetime.utcnow()
+    dts = datetime.datetime.now(datetime.timezone.utc)
     return round(time.mktime(dts.timetuple()) + dts.microsecond/1e6)
 
 

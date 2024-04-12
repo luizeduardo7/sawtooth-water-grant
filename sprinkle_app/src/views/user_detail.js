@@ -57,7 +57,7 @@ const UserDetailPage = {
     const setter = forms.stateSetter(vnode.state)
     const publicKey = _.get(vnode.state, 'user.public_key', '')
     const timestamp = new Date(
-      _.get(vnode.state, 'user.timestamp', '') * 1000).toString()
+      _.get(vnode.state, 'user.created_at', '') * 1000).toString()
     const quota = _.get(vnode.state, 'user.quota', '')
     return [
       layout.title(_.get(vnode.state, 'user.name', '')),
