@@ -42,10 +42,10 @@ class RouteHandler(object):
         required_fields = ['username', 'password']
         validate_fields(required_fields, body)
 
+        username = body.get('username')
         password = bytes(body.get('password'), 'utf-8')
 
-        auth_info = await self._database.fetch_auth_resource(
-            body.get('username'))
+        auth_info = await self._database.fetch_auth_resource(username)
         if auth_info is None:
             raise ApiUnauthorized("Username não encontrado.")
 
@@ -60,7 +60,8 @@ class RouteHandler(object):
 
         return json_response({
             'authorization': token,
-            'adminflag': is_admin})
+            'adminflag': is_admin,
+            'username': username})
     
     async def create_admin(self, request):
         await self._authorize(request)

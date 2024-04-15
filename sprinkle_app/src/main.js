@@ -47,12 +47,14 @@ const Layout = {
 }
 
 const loggedInNavAsAdmin = () => {
+  const username = api.getUserName(); 
   const links = [
     ['/sensors', 'Ver Registro de Sensores'],
     ['/users', 'Ver Usuários']
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
+    m('.nav-item.nav-link', `Bem-vindo, ${username}`),
     navigation.link('/signup', 'Criar Conta'),
     // navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
@@ -60,6 +62,7 @@ const loggedInNavAsAdmin = () => {
 }
 
 const loggedInNavAsUser = () => {
+  const username = api.getUserName(); 
   const links = [
     ['/register', 'Registrar Sensor'],
     ['/sensors', 'Ver Registro de Sensores'],
@@ -67,6 +70,7 @@ const loggedInNavAsUser = () => {
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
+    m('.nav-item.nav-link', `Bem-vindo, ${username}`),
     navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
   ])
