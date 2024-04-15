@@ -46,11 +46,9 @@ const setAuth = token => {
 const getIsAdmin = () => {
   if (!isAdminFlag) {
     isAdminFlag = window.localStorage.getItem(ADMIN_FLAG)
+    isAdminFlag = isAdminFlag === 'true';
   }
-  if(isAdminFlag == "true"){
-    return true
-  }
-  return false
+  return isAdminFlag
 }
 
 const setIsAdmin = adminFlag => {
