@@ -337,7 +337,6 @@ class Database(object):
     
 
     def insert_admin(self, admin_dict):
-        print("NOVO ADMIN")
         update_admin = """
         UPDATE admins SET end_block_num = {}
         WHERE end_block_num = {} AND public_key = '{}'
@@ -364,7 +363,7 @@ class Database(object):
         with self._conn.cursor() as cursor:
             cursor.execute(update_admin)
             cursor.execute(insert_admin)
-        print("NOVO ADMIN FINALIZADO")
+
 
     def insert_sensor(self, sensor_dict):
         update_sensor = """
@@ -380,15 +379,20 @@ class Database(object):
         sensor_id,
         start_block_num,
         end_block_num)
-        VALUES ('{}', '{}', '{}');
-        """.format(
-            sensor_dict['sensor_id'],
-            sensor_dict['start_block_num'],
-            sensor_dict['end_block_num'])
+        VALUES (%s, %s, %s)
+        ON CONFLICT (sensor_id) DO UPDATE
+        SET 
+            start_block_num = EXCLUDED.start_block_num,
+            end_block_num = EXCLUDED.end_block_num;
+        """
 
         with self._conn.cursor() as cursor:
             cursor.execute(update_sensor)
-            cursor.execute(insert_sensor)
+            cursor.execute(insert_sensor, (
+                sensor_dict['sensor_id'],
+                sensor_dict['start_block_num'],
+                sensor_dict['end_block_num'],
+            ))
             
         self._insert_sensor_locations(sensor_dict)
         self._insert_measurements(sensor_dict)
