@@ -7,6 +7,19 @@ All changes to the Sawtooth Water Grant project are recorded here. Changes must 
 
 Thanks for contributing.
 
+## [0.45]
+
+### Added
+
+- Rest API: Update at user fetch opertaion on database.py
+
+## [0.4]
+
+### Added
+
+- Admin Transaction Processor
+- Admin Subscriber
+
 ## [0.3]
 
 ### Updated

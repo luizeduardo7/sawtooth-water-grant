@@ -42,12 +42,12 @@ class RouteHandler(object):
         required_fields = ['username', 'password']
         validate_fields(required_fields, body)
 
+        username = body.get('username')
         password = bytes(body.get('password'), 'utf-8')
 
-        auth_info = await self._database.fetch_auth_resource(
-            body.get('username'))
+        auth_info = await self._database.fetch_auth_resource(username)
         if auth_info is None:
-            raise ApiUnauthorized('Não existe usuário com esse username')
+            raise ApiUnauthorized("Username não encontrado.")
 
         hashed_password = auth_info.get('hashed_password')
         if not bcrypt.checkpw(password, bytes.fromhex(hashed_password)):
@@ -55,10 +55,17 @@ class RouteHandler(object):
 
         token = generate_auth_token(
             request.app['secret_key'], auth_info.get('public_key'))
+        
+        is_admin = auth_info.get('is_admin')
 
-        return json_response({'authorization': token})
-
-    async def create_user(self, request):
+        return json_response({
+            'authorization': token,
+            'adminflag': is_admin,
+            'username': username})
+    
+    async def create_admin(self, request):
+        await self._authorize(request)
+        
         body = await decode_request(request)
         required_fields = ['username', 'name', 'password']
         validate_fields(required_fields, body)
@@ -69,7 +76,7 @@ class RouteHandler(object):
         auth_info = await self._database.fetch_auth_resource(username)
         if auth_info is not None:
             raise ApiUnauthorized(
-                'Já existe um usuário com esse username.'
+                'Já existe um admin com esse username.'
                 'Por favor, insira outro.')
         
         encrypted_private_key = encrypt_private_key(
@@ -77,14 +84,74 @@ class RouteHandler(object):
         hashed_password = hash_password(body.get('password'))
 
         await self._database.create_auth_entry(
-            public_key, username, encrypted_private_key, hashed_password)
+            public_key,
+            username, 
+            encrypted_private_key, 
+            hashed_password,
+            is_admin=True)
         
-        # Se a criação da auth for bem sucedida, a transação é
-        # criada na blockchain
-        await self._messenger.send_create_user_transaction(
-            private_key=private_key,
-            name=body.get('name'),
-            timestamp=get_time())
+        try:
+            await self._messenger.send_create_admin_transaction(
+                private_key=private_key,
+                name=body.get('name'),
+                timestamp=get_time())
+        except:
+            # Caso a transação não seja valida, a conta é removida da
+            # tabela auth
+            await self._database.delete_auth_entry(public_key)
+            raise ApiUnauthorized(
+                'Transação invalida')
+
+        token = generate_auth_token(
+            request.app['secret_key'], public_key)
+
+        return json_response({'authorization': token})
+
+    async def create_user(self, request):
+        await self._authorize(request)
+
+        body = await decode_request(request)
+        required_fields = ['username', 'name', 'password', 'created_by_admin_public_key']
+        validate_fields(required_fields, body)
+
+        # Valida se há permissão de admin
+        admin_public_key = body.get('created_by_admin_public_key')
+        admin_auth_info = await self._database.fetch_auth_resource(admin_public_key)
+        if admin_auth_info['is_admin'] is False:
+            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+        
+        public_key, private_key = self._messenger.get_new_key_pair()
+
+        username = body.get('username')
+        user_auth_info = await self._database.fetch_auth_resource(username)
+        if user_auth_info is not None:
+            raise ApiUnauthorized(
+                'Já existe um usuário com esse username.'
+                'Por favor, insira outro.')
+        
+        encrypted_private_key = encrypt_private_key(
+            request.app['aes_key'], public_key, private_key)
+        hashed_password = hash_password(body.get('password'))
+    
+        await self._database.create_auth_entry(
+            public_key,
+            username, 
+            encrypted_private_key, 
+            hashed_password,
+            is_admin=False)
+        
+        try:
+            await self._messenger.send_create_user_transaction(
+                private_key=private_key,
+                name=body.get('name'),
+                timestamp=get_time(),
+                admin_public_key=admin_public_key)
+        except:
+            # Caso a transação não seja valida, a conta é removida da
+            # tabela auth
+            await self._database.delete_auth_entry(public_key)
+            raise ApiUnauthorized(
+                'Transação invalida')
 
         token = generate_auth_token(
             request.app['secret_key'], public_key)
@@ -96,7 +163,7 @@ class RouteHandler(object):
         return json_response(user_list)
 
     async def fetch_user(self, request):
-        public_key = request.match_info.get('user_id', '')
+        public_key = request.match_info.get('user_public_key', '')
         user = await self._database.fetch_user_resource(public_key)
         if user is None:
             raise ApiNotFound(
@@ -105,19 +172,28 @@ class RouteHandler(object):
         return json_response(user)
     
     async def update_user(self, request):
-        private_key = await self._authorize(request)
-
         body = await decode_request(request)
-        required_fields = ['quota']
+        # Primeira validação, verifica se há a nova cota e
+        # a chave pública do admin na requisição
+        required_fields = ['quota', 'updated_by_admin_public_key']
         validate_fields(required_fields, body)
 
-        user_id = request.match_info.get('user_id', '')
+         # Valida se há permissão de admin
+        admin_public_key = body.get('updated_by_admin_public_key')
+        admin_auth_info = await self._database.fetch_auth_resource(admin_public_key)
+        if admin_auth_info['is_admin'] is False:
+            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+
+        private_key = await self._authorize(request)
+
+        user_public_key = request.match_info.get('user_public_key', '')
 
         await self._messenger.send_update_user_transaction(
             private_key=private_key,
             quota=body['quota'],
-            user_id=user_id,
-            timestamp=get_time())
+            user_public_key=user_public_key,
+            timestamp=get_time(),
+            admin_public_key=body['updated_by_admin_public_key'])
 
         return json_response(
             {'data': 'Update user transaction submitted'})
@@ -151,46 +227,6 @@ class RouteHandler(object):
                 'sensor com o ID '
                 '{} não foi encontrado.'.format(sensor_id))
         return json_response(sensor)
-
-    # Transferência de sensores desativada.
-    # async def transfer_sensor(self, request):
-    #     private_key = await self._authorize(request)
-
-    #     body = await decode_request(request)
-    #     required_fields = ['receiving_user']
-    #     validate_fields(required_fields, body)
-
-    #     sensor_id = request.match_info.get('sensor_id', '')
-
-    #     await self._messenger.send_transfer_sensor_transaction(
-    #         private_key=private_key,
-    #         receiving_user=body['receiving_user'],
-    #         sensor_id=sensor_id,
-    #         timestamp=get_time())
-
-    #     return json_response(
-    #         {'data': 'Transfer sensor transaction submitted'})
-
-    # Antigo sensor update
-    # async def update_sensor(self, request):
-    #     private_key = await self._authorize(request)
-
-    #     body = await decode_request(request)
-    #     required_fields = ['latitude', 'longitude', 'measurement']
-    #     validate_fields(required_fields, body)
-
-    #     sensor_id = request.match_info.get('sensor_id', '')
-
-    #     await self._messenger.send_update_sensor_transaction(
-    #         private_key=private_key,
-    #         latitude=body['latitude'],
-    #         longitude=body['longitude'],
-    #         measurement=body['measurement'],
-    #         sensor_id=sensor_id,
-    #         timestamp=get_time())
-
-    #     return json_response(
-    #         {'data': 'Update sensor transaction submitted'})
     
     async def update_sensor(self, request):
         private_key = await self._authorize(request)
@@ -223,7 +259,18 @@ class RouteHandler(object):
                                                 token)
         except BadSignature:
             raise ApiUnauthorized('Token de autenticação invalido.')
+        
         public_key = token_dict.get('public_key')
+        body = await decode_request(request)
+
+        # Verifica se é há um chave de admin válida
+        admin_auth = await self._database.fetch_auth_resource(public_key)
+        if admin_auth is None:
+            raise ApiUnauthorized('Token não está associado com um usuário.')
+
+        # Verifica se trata da operação de atualização de usuário
+        if body.get('user_public_key'):
+            public_key = body.get('user_public_key')  
 
         auth_resource = await self._database.fetch_auth_resource(public_key)
         if auth_resource is None:
@@ -232,6 +279,13 @@ class RouteHandler(object):
                                    public_key,
                                    auth_resource['encrypted_private_key'])
 
+
+async def validate_admin(admin_public_key, database):
+        auth_resource = await database.fetch_auth_resource(admin_public_key)
+        print(auth_resource['is_admin'])
+        print(type(auth_resource['is_admin']))
+        if auth_resource['is_admin'] is False:
+            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
 
 async def decode_request(request):
     try:
@@ -245,7 +299,6 @@ def validate_fields(required_fields, body):
         if body.get(field) is None:
             raise ApiBadRequest(
                 "O parâmetro '{}' é requerido.".format(field))
-
 
 def encrypt_private_key(aes_key, public_key, private_key):
     init_vector = bytes.fromhex(public_key[:32])
@@ -265,7 +318,7 @@ def hash_password(password):
 
 
 def get_time():
-    dts = datetime.datetime.utcnow()
+    dts = datetime.datetime.now(datetime.timezone.utc)
     return round(time.mktime(dts.timetuple()) + dts.microsecond/1e6)
 
 
@@ -278,3 +331,43 @@ def generate_auth_token(secret_key, public_key):
 def deserialize_auth_token(secret_key, token):
     serializer = Serializer(secret_key)
     return serializer.loads(token)
+
+# Transferência de sensores desativada.
+# async def transfer_sensor(self, request):
+#     private_key = await self._authorize(request)
+
+#     body = await decode_request(request)
+#     required_fields = ['receiving_user']
+#     validate_fields(required_fields, body)
+
+#     sensor_id = request.match_info.get('sensor_id', '')
+
+#     await self._messenger.send_transfer_sensor_transaction(
+#         private_key=private_key,
+#         receiving_user=body['receiving_user'],
+#         sensor_id=sensor_id,
+#         timestamp=get_time())
+
+#     return json_response(
+#         {'data': 'Transfer sensor transaction submitted'})
+
+# Antigo sensor update
+# async def update_sensor(self, request):
+#     private_key = await self._authorize(request)
+
+#     body = await decode_request(request)
+#     required_fields = ['latitude', 'longitude', 'measurement']
+#     validate_fields(required_fields, body)
+
+#     sensor_id = request.match_info.get('sensor_id', '')
+
+#     await self._messenger.send_update_sensor_transaction(
+#         private_key=private_key,
+#         latitude=body['latitude'],
+#         longitude=body['longitude'],
+#         measurement=body['measurement'],
+#         sensor_id=sensor_id,
+#         timestamp=get_time())
+
+#     return json_response(
+#         {'data': 'Update sensor transaction submitted'})

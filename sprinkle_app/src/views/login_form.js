@@ -40,19 +40,16 @@ const LoginForm = {
           api.post('authentication', credentials)
             .then(res => {
               api.setAuth(res.authorization)
+              api.setIsAdmin(res.adminflag)
+              api.setUserName(res.username)
               m.route.set('/')
             })
             .catch(api.alertError)
         }
       },
       m('legend', 'Login Usuário'),
-      forms.textInput(setter('username'), 'Username'),
+      forms.textInput(setter('username'), 'Username ou Chave Pública'),
       forms.passwordInput(setter('password'), 'Senha'),
-      m('container.text-center',
-        'Ou você pode ',
-        m('a[href="/signup"]',
-          { oncreate: m.route.link },
-          'criar um novo usuário')),
       m('.form-group',
         m('.row.justify-content-end.align-items-end',
           m('col-2',

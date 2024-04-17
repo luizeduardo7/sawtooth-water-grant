@@ -21,7 +21,11 @@ const _ = require('lodash')
 
 const API_PATH = 'api/'
 const STORAGE_KEY = 'sprinkle.authorization'
+const ADMIN_FLAG = 'sprinkle.adminflag'
+const USER_NAME = 'sprinkle.username'
 let authToken = null
+let isAdminFlag = null
+let userName = null
 
 /**
  * Getters and setters to handle the auth token both in memory and storage
@@ -39,10 +43,42 @@ const setAuth = token => {
   return authToken
 }
 
+const getIsAdmin = () => {
+  if (!isAdminFlag) {
+    isAdminFlag = window.localStorage.getItem(ADMIN_FLAG)
+    isAdminFlag = isAdminFlag === 'true';
+  }
+  return isAdminFlag
+}
+
+const setIsAdmin = adminFlag => {
+  window.localStorage.setItem(ADMIN_FLAG, adminFlag)
+  isAdminFlag = adminFlag
+  return isAdminFlag
+}
+
+const getUserName = () => {
+  if (!userName) {
+    userName = window.localStorage.getItem(USER_NAME)
+  }
+  return userName
+}
+
+const setUserName = username => {
+  window.localStorage.setItem(USER_NAME, username)
+  userName = username
+  return userName
+}
+
 const clearAuth = () => {
   const token = getAuth()
   window.localStorage.clear(STORAGE_KEY)
+  window.localStorage.clear(ADMIN_FLAG)
+  window.localStorage.clear(USER_NAME)
   authToken = null
+  isAdminFlag = null
+  userName = null
+
   return token
 }
 
@@ -82,6 +118,7 @@ const request = (method, endpoint, data) => {
  */
 const get = _.partial(request, 'GET')
 const post = _.partial(request, 'POST')
+const put = _.partial(request, 'PUT')
 
 /**
  * Sends the user an alert with the error message and reloads the page.
@@ -96,9 +133,14 @@ const alertError = err => {
 module.exports = {
   getAuth,
   setAuth,
+  getIsAdmin,
+  setIsAdmin,
+  getUserName,
+  setUserName,
   clearAuth,
   getPublicKey,
   post,
   get,
+  put,
   alertError
 }

@@ -49,7 +49,6 @@ const updateSubmitter = state => e => {
 
   api.post(`sensors/${sensorId}/update`, update)
     .then(() => {
-      // m.route.set(`/sensors/${sensorId}`)
       window.location.reload();
      })
     .catch(api.alertError)
@@ -69,14 +68,14 @@ const SensorDetailPage = {
     const setter = forms.stateSetter(vnode.state)
     const sensorId = _.get(vnode.state, 'sensor.sensor_id', '')
     const coordinates = _.get(vnode.state, 'sensor.locations', [])
-    const created = new Date(
-      _.get(_.minBy(coordinates, 'timestamp'), 'timestamp') * 1000).toString()
-    const updated = new Date(
-      _.get(_.maxBy(coordinates, 'timestamp'), 'timestamp') * 1000).toString()
     const owners = _.get(vnode.state, 'sensor.owners', [])
-    const owner = _.get(_.maxBy(owners, 'timestamp'), 'user_id', '')
+    const owner = _.get(_.maxBy(owners, 'timestamp'), 'user_public_key', '')
     const measurements = _.get(vnode.state, 'sensor.measurements', [])
     const measurement = _.get(_.maxBy(measurements, 'timestamp'), 'measurement', '')
+    const created = new Date(
+      _.get(_.minBy(measurements, 'timestamp'), 'timestamp') * 1000).toString()
+    const updated = new Date(
+      _.get(_.maxBy(measurements, 'timestamp'), 'timestamp') * 1000).toString()
 
     // Função para formatar a data e hora de uma medição
     const formatDateTime = timestamp => {
@@ -150,7 +149,7 @@ const SensorDetailPage = {
                     'Atualizar Leitura')))))
             ])
           : ''),
-          (owner == api.getPublicKey())
+          (owner == api.getPublicKey() || api.getIsAdmin())
           ? m('.container', [
               m('table.table', [
                 m('thead',

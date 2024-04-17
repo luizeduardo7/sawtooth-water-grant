@@ -46,27 +46,48 @@ const Layout = {
   }
 }
 
-const loggedInNav = () => {
+const loggedInNavAsAdmin = () => {
+  const username = api.getUserName(); 
   const links = [
-    ['/register', 'Registrar Sensor'],
     ['/sensors', 'Ver Registro de Sensores'],
     ['/users', 'Ver Usuários']
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
+    m('.nav-item.nav-link', `Bem-vindo, ${username}`),
+    navigation.link('/signup', 'Criar Conta'),
+    // navigation.link('/profile', 'Perfil'),
+    navigation.button('/logout', 'Sair')
+  ])
+}
+
+const loggedInNavAsUser = () => {
+  const username = api.getUserName(); 
+  const links = [
+    ['/register', 'Registrar Sensor'],
+    ['/sensors', 'Ver Registro de Sensores'],
+    // ['/users', 'Ver Usuários']
+  ]
+  return m(navigation.Navbar, {}, [
+    navigation.links(links),
+    m('.nav-item.nav-link', `Bem-vindo, ${username}`),
     navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
   ])
 }
 
 const loggedOutNav = () => {
-  const links = [
-    ['/sensors', 'Ver Registro de Sensores'],
-    ['/users', 'Ver Usuários']
-  ]
+  // const links = [
+  //   ['/sensors', 'Ver Registro de Sensores'],
+  //   ['/users', 'Ver Usuários']
+  // ]
   return m(navigation.Navbar, {}, [
-    navigation.links(links),
-    navigation.button('/login', 'Log in/Criar conta')
+    m('.navbar-nav.mr-auto', [
+      // navigation.links(links)
+    ]),
+    m('.navbar-nav', [
+      navigation.button('/login', 'Log in')
+    ])
   ])
 }
 
@@ -85,7 +106,11 @@ const resolve = (view, restricted = false) => {
 
   resolver.render = vnode => {
     if (api.getAuth()) {
-      return m(Layout, { navbar: loggedInNav() }, m(view, vnode.attrs))
+      if (api.getIsAdmin()) {
+        return m(Layout, { navbar: loggedInNavAsAdmin() }, m(view, vnode.attrs))
+      } else {
+        return m(Layout, { navbar: loggedInNavAsUser() }, m(view, vnode.attrs))
+      }
     }
     return m(Layout, { navbar: loggedOutNav() }, m(view, vnode.attrs))
   }
@@ -116,14 +141,14 @@ const profile = () => {
 document.addEventListener('DOMContentLoaded', () => {
   m.route(document.querySelector('#app'), '/', {
     '/': resolve(Dashboard),
-    '/users': resolve(UserList),
-    '/users/:publicKey': resolve(UserDetailPage),
+    '/users': resolve(UserList, true),
+    '/users/:publicKey': resolve(UserDetailPage, true),
     '/register': resolve(RegisterSensorForm, true),
     '/login': resolve(LoginForm),
     '/logout': { onmatch: logout },
     '/profile': { onmatch: profile},
-    '/sensors': resolve(SensorList),
-    '/sensors/:sensorId': resolve(SensorDetailPage),
-    '/signup': resolve(SignupForm)
+    '/sensors': resolve(SensorList, true),
+    '/sensors/:sensorId': resolve(SensorDetailPage, true),
+    '/signup': resolve(SignupForm, true)
   })
 })

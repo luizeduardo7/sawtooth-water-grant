@@ -22,12 +22,51 @@ from water_grant_addressing import addresser
 
 from water_grant_protobuf import payload_pb2
 
+def make_create_admin_transaction(transaction_signer,
+                                  batch_signer,
+                                  name,
+                                  timestamp):
+    """Make a CreateAdminAction transaction and wrap it in a batch
+
+    Args:
+        transaction_signer (sawtooth_signing.Signer): The transaction key pair
+        batch_signer (sawtooth_signing.Signer): The batch key pair
+        name (str): The admin's name
+        timestamp (int): Unix UTC timestamp of when the admin is created
+
+    Returns:
+        batch_pb2.Batch: The transaction wrapped in a batch
+
+    """
+
+    admin_address = addresser.get_admin_address(
+        transaction_signer.get_public_key().as_hex())
+
+    inputs = [admin_address]
+
+    outputs = [admin_address]
+
+    action = payload_pb2.CreateAdminAction(name=name)
+
+    payload = payload_pb2.Payload(
+        action=payload_pb2.Payload.CREATE_ADMIN,
+        create_admin=action,
+        timestamp=timestamp)
+    payload_bytes = payload.SerializeToString()
+
+    return _make_batch(
+        payload_bytes=payload_bytes,
+        inputs=inputs,
+        outputs=outputs,
+        transaction_signer=transaction_signer,
+        batch_signer=batch_signer)
 
 def make_create_user_transaction(transaction_signer,
                                   batch_signer,
                                   name,
                                   timestamp,
-                                  quota):
+                                  quota,
+                                  admin_public_key):
     """Make a CreateUserAction transaction and wrap it in a batch
 
     Args:
@@ -36,6 +75,7 @@ def make_create_user_transaction(transaction_signer,
         name (str): The user's name
         timestamp (int): Unix UTC timestamp of when the user is created
         quota (float): Initial quota of the user
+        admin_public_key (str): Admin Public key that created user
 
     Returns:
         batch_pb2.Batch: The transaction wrapped in a batch
@@ -44,12 +84,17 @@ def make_create_user_transaction(transaction_signer,
 
     user_address = addresser.get_user_address(
         transaction_signer.get_public_key().as_hex())
+    
+    admin_address = addresser.get_admin_address(admin_public_key)
 
-    inputs = [user_address]
+    inputs = [user_address, admin_address]
 
     outputs = [user_address]
 
-    action = payload_pb2.CreateUserAction(name=name, quota=quota)
+    action = payload_pb2.CreateUserAction(
+        name=name,
+        quota=quota, 
+        created_by_admin_public_key=admin_public_key)
 
     payload = payload_pb2.Payload(
         action=payload_pb2.Payload.CREATE_USER,
@@ -67,16 +112,18 @@ def make_create_user_transaction(transaction_signer,
 def make_update_user_transaction(transaction_signer,
                                    batch_signer,
                                    quota,
-                                   user_id,
-                                   timestamp):
+                                   user_public_key,
+                                   timestamp,
+                                   admin_public_key):
     """Make a CreateSensorAction transaction and wrap it in a batch
 
     Args:
         transaction_signer (sawtooth_signing.Signer): The transaction key pair
         batch_signer (sawtooth_signing.Signer): The batch key pair
         quota: New quota of the user
-        user_id (str): User public key
+        user_public_key (str): User public key
         timestamp (int): Unix UTC timestamp of when the user is updated
+        admin_public_key (str): Admin Public key that updated user
 
     Returns:
         batch_pb2.Batch: The transaction wrapped in a batch
@@ -84,13 +131,16 @@ def make_update_user_transaction(transaction_signer,
     user_address = addresser.get_user_address(
         transaction_signer.get_public_key().as_hex())
 
-    inputs = [user_address]
+    admin_address = addresser.get_admin_address(admin_public_key)
+
+    inputs = [user_address, admin_address]
 
     outputs = [user_address]
 
     action = payload_pb2.UpdateUserAction(
-        user_id=user_id,
-        quota=quota)
+        user_public_key=user_public_key,
+        quota=quota,
+        updated_by_admin_public_key=admin_public_key)
 
     payload = payload_pb2.Payload(
         action=payload_pb2.Payload.UPDATE_USER,
@@ -154,51 +204,6 @@ def make_create_sensor_transaction(transaction_signer,
         outputs=outputs,
         transaction_signer=transaction_signer,
         batch_signer=batch_signer)
-
-
-# Transferência de sensores desativada.
-# def make_transfer_sensor_transaction(transaction_signer,
-#                                      batch_signer,
-#                                      receiving_user,
-#                                      sensor_id,
-#                                      timestamp):
-#     """Make a CreateSensorAction transaction and wrap it in a batch
-
-#     Args:
-#         transaction_signer (sawtooth_signing.Signer): The transaction key pair
-#         batch_signer (sawtooth_signing.Signer): The batch key pair
-#         receiving_user (str): Public key of the user receiving the sensor
-#         sensor_id (str): Unique ID of the sensor
-#         timestamp (int): Unix UTC timestamp of when the sensor is transferred
-
-#     Returns:
-#         batch_pb2.Batch: The transaction wrapped in a batch
-#     """
-#     sending_user_address = addresser.get_user_address(
-#         transaction_signer.get_public_key().as_hex())
-#     receiving_user_address = addresser.get_user_address(receiving_user)
-#     sensor_address = addresser.get_sensor_address(sensor_id)
-
-#     inputs = [sending_user_address, receiving_user_address, sensor_address]
-
-#     outputs = [sensor_address]
-
-#     action = payload_pb2.TransferSensorAction(
-#         sensor_id=sensor_id,
-#         receiving_user=receiving_user)
-
-#     payload = payload_pb2.Payload(
-#         action=payload_pb2.Payload.TRANSFER_SENSOR,
-#         transfer_sensor=action,
-#         timestamp=timestamp)
-#     payload_bytes = payload.SerializeToString()
-
-#     return _make_batch(
-#         payload_bytes=payload_bytes,
-#         inputs=inputs,
-#         outputs=outputs,
-#         transaction_signer=transaction_signer,
-#         batch_signer=batch_signer)
 
 
 def make_update_sensor_transaction(transaction_signer,
@@ -277,3 +282,48 @@ def _make_batch(payload_bytes,
         transactions=[transaction])
 
     return batch
+
+
+# Transferência de sensores desativada.
+# def make_transfer_sensor_transaction(transaction_signer,
+#                                      batch_signer,
+#                                      receiving_user,
+#                                      sensor_id,
+#                                      timestamp):
+#     """Make a CreateSensorAction transaction and wrap it in a batch
+
+#     Args:
+#         transaction_signer (sawtooth_signing.Signer): The transaction key pair
+#         batch_signer (sawtooth_signing.Signer): The batch key pair
+#         receiving_user (str): Public key of the user receiving the sensor
+#         sensor_id (str): Unique ID of the sensor
+#         timestamp (int): Unix UTC timestamp of when the sensor is transferred
+
+#     Returns:
+#         batch_pb2.Batch: The transaction wrapped in a batch
+#     """
+#     sending_user_address = addresser.get_user_address(
+#         transaction_signer.get_public_key().as_hex())
+#     receiving_user_address = addresser.get_user_address(receiving_user)
+#     sensor_address = addresser.get_sensor_address(sensor_id)
+
+#     inputs = [sending_user_address, receiving_user_address, sensor_address]
+
+#     outputs = [sensor_address]
+
+#     action = payload_pb2.TransferSensorAction(
+#         sensor_id=sensor_id,
+#         receiving_user=receiving_user)
+
+#     payload = payload_pb2.Payload(
+#         action=payload_pb2.Payload.TRANSFER_SENSOR,
+#         transfer_sensor=action,
+#         timestamp=timestamp)
+#     payload_bytes = payload.SerializeToString()
+
+#     return _make_batch(
+#         payload_bytes=payload_bytes,
+#         inputs=inputs,
+#         outputs=outputs,
+#         transaction_signer=transaction_signer,
+#         batch_signer=batch_signer)

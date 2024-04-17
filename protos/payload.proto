@@ -3,27 +3,33 @@ syntax = "proto3";
 
 message Payload{
     enum Action {
-        CREATE_USER = 0;
-        UPDATE_USER = 1;
-        CREATE_SENSOR = 2;
-        UPDATE_SENSOR = 3;
+        CREATE_ADMIN = 0;
+        CREATE_USER = 1;
+        UPDATE_USER = 2;
+        CREATE_SENSOR = 3;
+        UPDATE_SENSOR = 4;
     }
 
-    // If the payload contains a create user, create sensor or
-    // update sensor action
+    // If the payload contains a create admin, create user, update user, create 
+    // sensor or update sensor action
     Action action = 1;
 
     // The transaction handler will read from just one of these fields
     // according to the action
-    CreateUserAction create_user = 2;
-    UpdateUserAction update_user = 3;
-    CreateSensorAction create_sensor = 4;
-    UpdateSensorAction update_sensor = 5;
+    CreateAdminAction create_admin = 2;
+    CreateUserAction create_user = 3;
+    UpdateUserAction update_user = 4;
+    CreateSensorAction create_sensor = 5;
+    UpdateSensorAction update_sensor = 6;
 
     // Approximately when transaction was submitted, as a Unix UTC timestamp
-    uint64 timestamp = 6;
+    uint64 timestamp = 7;
 }
 
+message CreateAdminAction {
+    // A human-readable name identifying the new admin
+    string name = 1;
+}
 
 message CreateUserAction {
     // A human-readable name identifying the new user
@@ -31,14 +37,20 @@ message CreateUserAction {
 
     //  Initial quota of the user
     double quota = 2;
+
+    // Admin public key
+    string created_by_admin_public_key = 3;
 }
 
 message UpdateUserAction {
     // User's unique public key
-    string user_id = 1;
+    string user_public_key = 1;
 
     // New quota
     double quota = 2;
+
+    // Admin public key
+    string updated_by_admin_public_key = 3;
 }
 
 

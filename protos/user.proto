@@ -20,14 +20,23 @@ message User {
     // User's unique public key
     string public_key = 1;
 
-    // A string with the User was registered, as a Unix UTC timestamp
+    // A string with the User name
     string name = 2;
 
     // Approximately when the user was registered, as a Unix UTC timestamp
-    uint64 timestamp = 3;
+    uint64 created_at = 3;
 
     // Water quota granted to the user
     double quota = 4;
+
+    // The admin's public_key that created the user
+    string created_by_admin_public_key = 5;
+
+    //  The admin's public_key that updated the user
+    string updated_by_admin_public_key = 6;
+
+    // Approximately when the user was updated, as a Unix UTC timestamp
+    uint64 updated_at = 7;
 }
 
 

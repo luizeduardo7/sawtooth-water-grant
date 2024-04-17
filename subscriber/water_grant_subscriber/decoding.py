@@ -15,11 +15,13 @@
 
 from water_grant_addressing.addresser import AddressSpace
 from water_grant_addressing.addresser import get_address_type
+from water_grant_protobuf.admin_pb2 import AdminContainer
 from water_grant_protobuf.user_pb2 import UserContainer
 from water_grant_protobuf.sensor_pb2 import SensorContainer
 
 
 CONTAINERS = {
+    AddressSpace.ADMIN: AdminContainer,
     AddressSpace.USER: UserContainer,
     AddressSpace.SENSOR: SensorContainer
 }

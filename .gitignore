@@ -16,3 +16,5 @@
 # PYC
 __pycache__/
 *.pyc
+
+admin_generate.py

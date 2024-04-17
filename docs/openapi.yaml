@@ -69,9 +69,9 @@ paths:
           $ref: '#/responses/400BadRequest'
         '500':
           $ref: '#/responses/500ServerError'
-  '/users/{user_id}':
+  '/users/{user_public_key}':
     parameters:
-      - $ref: '#/parameters/user_id'
+      - $ref: '#/parameters/user_public_key'
     get:
       description: Fetches the complete details of a particular user
       responses:
@@ -286,7 +286,7 @@ definitions:
         example: fish-44
   OwnerObject:
     properties:
-      user_id:
+      user_public_key:
         description: Public key of a particular user
         type: string
         example: 02178c1bcdb25407394348f1ff5273adae287d8ea328184546837957e71c7de57a
@@ -325,8 +325,8 @@ definitions:
         type: number
         example: -93272107
 parameters:
-  user_id:
-    name: user_id
+  user_public_key:
+    name: user_public_key
     description: Public key of a particular user
     in: path
     required: true

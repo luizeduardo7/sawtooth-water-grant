@@ -20,16 +20,23 @@ import hashlib
 FAMILY_NAME = 'outorga_ana'
 FAMILY_VERSION = '0.1'
 NAMESPACE = hashlib.sha512(FAMILY_NAME.encode('utf-8')).hexdigest()[:6]
-USER_PREFIX = '00'
-SENSOR_PREFIX = '01'
+ADMIN_PREFIX = '00'
+USER_PREFIX = '01'
+SENSOR_PREFIX = '02'
 
 
 @enum.unique
 class AddressSpace(enum.IntEnum):
-    USER = 0
-    SENSOR = 1
+    ADMIN = 0
+    USER = 1
+    SENSOR = 2
 
     OTHER_FAMILY = 100
+
+
+def get_admin_address(public_key):
+    return NAMESPACE + ADMIN_PREFIX + hashlib.sha512(
+        public_key.encode('utf-8')).hexdigest()[:62]
 
 
 def get_user_address(public_key):
@@ -49,8 +56,10 @@ def get_address_type(address):
     infix = address[6:8]
 
     if infix == '00':
-        return AddressSpace.USER
+        return AddressSpace.ADMIN
     if infix == '01':
+        return AddressSpace.USER
+    if infix == '02':
         return AddressSpace.SENSOR
 
     return AddressSpace.OTHER_FAMILY

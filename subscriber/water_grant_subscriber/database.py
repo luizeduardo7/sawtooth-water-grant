@@ -35,14 +35,15 @@ CREATE TABLE IF NOT EXISTS auth (
     public_key            varchar PRIMARY KEY,
     username              varchar UNIQUE,
     hashed_password       varchar,
-    encrypted_private_key varchar
+    encrypted_private_key varchar,
+    is_admin              boolean
 )
 """
 
 CREATE_SENSOR_STMTS = """
 CREATE TABLE IF NOT EXISTS sensors (
     id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
+    sensor_id        varchar UNIQUE,
     timestamp        bigint,
     start_block_num  bigint,
     end_block_num    bigint
@@ -76,7 +77,7 @@ CREATE_SENSOR_OWNER_STMTS = """
 CREATE TABLE IF NOT EXISTS sensor_owners (
     id               bigserial PRIMARY KEY,
     sensor_id        varchar,
-    user_id          varchar,
+    user_public_key  varchar,
     timestamp        bigint,
     start_block_num  bigint,
     end_block_num    bigint
@@ -85,16 +86,29 @@ CREATE TABLE IF NOT EXISTS sensor_owners (
 
 CREATE_USER_STMTS = """
 CREATE TABLE IF NOT EXISTS users (
+    id                           bigserial PRIMARY KEY,
+    public_key                   varchar UNIQUE,
+    name                         varchar,
+    created_at                   bigint,
+    quota                        float,
+    created_by_admin_public_key  varchar,
+    updated_by_admin_public_key  varchar,
+    updated_at                   bigint,
+    start_block_num              bigint,
+    end_block_num                bigint
+);
+"""
+
+CREATE_ADMIN_STMTS = """
+CREATE TABLE IF NOT EXISTS admins (
     id               bigserial PRIMARY KEY,
-    public_key       varchar,
+    public_key       varchar UNIQUE,
     name             varchar,
-    timestamp        bigint,
-    quota            float,
+    created_at       bigint,
     start_block_num  bigint,
     end_block_num    bigint
 );
 """
-
 
 class Database(object):
     """Simple object for managing a connection to a postgres database
@@ -156,6 +170,9 @@ class Database(object):
             print('Creating table: users')
             cursor.execute(CREATE_USER_STMTS)
 
+            print('Creating table: admins')
+            cursor.execute(CREATE_ADMIN_STMTS)
+
         self._conn.commit()
 
     def disconnect(self):
@@ -180,6 +197,15 @@ class Database(object):
         
         update_users = """
         UPDATE users SET end_block_num = null
+        WHERE end_block_num >= {}
+        """.format(block_num)
+
+        delete_admins = """
+        DELETE FROM admins WHERE start_block_num >= {}
+        """.format(block_num)
+        
+        update_admins = """
+        UPDATE admins SET end_block_num = null
         WHERE end_block_num >= {}
         """.format(block_num)
 
@@ -214,6 +240,8 @@ class Database(object):
         with self._conn.cursor() as cursor:
             cursor.execute(delete_users)
             cursor.execute(update_users)
+            cursor.execute(delete_admins)
+            cursor.execute(update_admins)
             cursor.execute(delete_measurements)
             cursor.execute(delete_sensor_locations)
             cursor.execute(delete_sensor_owners)
@@ -260,7 +288,6 @@ class Database(object):
             cursor.execute(insert)
 
     def insert_user(self, user_dict):
-        print("NOVO USUARIO")
         update_user = """
         UPDATE users SET end_block_num = {}
         WHERE end_block_num = {} AND public_key = '{}'
@@ -271,25 +298,72 @@ class Database(object):
 
         insert_user = """
         INSERT INTO users (
-        public_key,
-        name,
-        timestamp,
-        quota,
-        start_block_num,
-        end_block_num)
-        VALUES ('{}', '{}', '{}', '{}', '{}', '{}');
-        """.format(
-            user_dict['public_key'],
-            user_dict['name'],
-            user_dict['timestamp'],
-            user_dict['quota'],
-            user_dict['start_block_num'],
-            user_dict['end_block_num'])
+            public_key,
+            name,
+            created_at,
+            quota,
+            created_by_admin_public_key,
+            updated_by_admin_public_key,
+            updated_at,
+            start_block_num,
+            end_block_num
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (public_key) DO UPDATE
+        SET 
+            name = EXCLUDED.name,
+            created_at = EXCLUDED.created_at,
+            quota = EXCLUDED.quota,
+            created_by_admin_public_key = EXCLUDED.created_by_admin_public_key,
+            updated_by_admin_public_key = EXCLUDED.updated_by_admin_public_key,
+            updated_at = EXCLUDED.updated_at,
+            start_block_num = EXCLUDED.start_block_num,
+            end_block_num = EXCLUDED.end_block_num;
+        """
 
         with self._conn.cursor() as cursor:
             cursor.execute(update_user)
-            cursor.execute(insert_user)
-        print("NOVO USUARIO FINALIZADO")
+            cursor.execute(insert_user, (
+                user_dict['public_key'],
+                user_dict['name'],
+                user_dict['created_at'],
+                user_dict['quota'],
+                user_dict['created_by_admin_public_key'],
+                user_dict['updated_by_admin_public_key'],
+                user_dict['updated_at'],
+                user_dict['start_block_num'],
+                user_dict['end_block_num']
+            ))
+    
+
+    def insert_admin(self, admin_dict):
+        update_admin = """
+        UPDATE admins SET end_block_num = {}
+        WHERE end_block_num = {} AND public_key = '{}'
+        """.format(
+            admin_dict['start_block_num'],
+            admin_dict['end_block_num'],
+            admin_dict['public_key'])
+
+        insert_admin = """
+        INSERT INTO admins (
+        public_key,
+        name,
+        created_at,
+        start_block_num,
+        end_block_num)
+        VALUES ('{}', '{}', '{}', '{}', '{}');
+        """.format(
+            admin_dict['public_key'],
+            admin_dict['name'],
+            admin_dict['created_at'],
+            admin_dict['start_block_num'],
+            admin_dict['end_block_num'])
+
+        with self._conn.cursor() as cursor:
+            cursor.execute(update_admin)
+            cursor.execute(insert_admin)
+
 
     def insert_sensor(self, sensor_dict):
         update_sensor = """
@@ -305,15 +379,20 @@ class Database(object):
         sensor_id,
         start_block_num,
         end_block_num)
-        VALUES ('{}', '{}', '{}');
-        """.format(
-            sensor_dict['sensor_id'],
-            sensor_dict['start_block_num'],
-            sensor_dict['end_block_num'])
+        VALUES (%s, %s, %s)
+        ON CONFLICT (sensor_id) DO UPDATE
+        SET 
+            start_block_num = EXCLUDED.start_block_num,
+            end_block_num = EXCLUDED.end_block_num;
+        """
 
         with self._conn.cursor() as cursor:
             cursor.execute(update_sensor)
-            cursor.execute(insert_sensor)
+            cursor.execute(insert_sensor, (
+                sensor_dict['sensor_id'],
+                sensor_dict['start_block_num'],
+                sensor_dict['end_block_num'],
+            ))
             
         self._insert_sensor_locations(sensor_dict)
         self._insert_measurements(sensor_dict)
@@ -397,14 +476,14 @@ class Database(object):
                 """
                 INSERT INTO sensor_owners (
                 sensor_id,
-                user_id,
+                user_public_key,
                 timestamp,
                 start_block_num,
                 end_block_num)
                 VALUES ('{}', '{}', '{}', '{}', '{}');
                 """.format(
                     sensor_dict['sensor_id'],
-                    owner['user_id'],
+                    owner['user_public_key'],
                     owner['timestamp'],
                     sensor_dict['start_block_num'],
                     sensor_dict['end_block_num'])

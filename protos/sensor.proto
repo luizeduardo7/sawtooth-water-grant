@@ -4,7 +4,7 @@ syntax = "proto3";
 message Sensor {
     message Owner {
         // Public key of the user who owns the sensor
-        string user_id = 1;
+        string user_public_key = 1;
 
         // Approximately when the owner was updated, as a Unix UTC timestamp
         uint64 timestamp = 2;

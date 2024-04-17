@@ -71,33 +71,77 @@ class Database(object):
         """
         self._conn.close()
 
+
     async def create_auth_entry(self,
                                 public_key,
                                 username,
                                 encrypted_private_key,
-                                hashed_password):
+                                hashed_password,
+                                is_admin):
         insert = """
         INSERT INTO auth (
             public_key,
             username,
             encrypted_private_key,
-            hashed_password
+            hashed_password,
+            is_admin
         )
-        VALUES ('{}', '{}', '{}', '{}');
+        VALUES ('{}', '{}', '{}', '{}', '{}');
         """.format(
             public_key,
             username,
             encrypted_private_key.hex(),
-            hashed_password.hex())
+            hashed_password.hex(),
+            is_admin)
 
         async with self._conn.cursor() as cursor:
             await cursor.execute(insert)
 
         self._conn.commit()
+    
+    
+    async def delete_auth_entry(self,
+                                public_key):
+        remove = """
+        DELETE FROM auth WHERE public_key = '{0}'
+        """.format(public_key)
+
+        async with self._conn.cursor() as cursor:
+            await cursor.execute(remove)
+
+        self._conn.commit()
+
+
+    async def fetch_admin_resource(self, public_key):
+        fetch = """
+        SELECT public_key, name, created_at
+        FROM admins
+        WHERE public_key='{0}'
+        AND ({1}) >= start_block_num
+        AND ({1}) < end_block_num;
+        """.format(public_key, LATEST_BLOCK_NUM)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            await cursor.execute(fetch)
+            return await cursor.fetchone()
+        
+    async def fetch_all_admin_resources(self):
+        fetch = """
+        SELECT public_key, name, created_at FROM admins
+        WHERE ({0}) >= start_block_num
+        AND ({0}) < end_block_num;
+        """.format(LATEST_BLOCK_NUM)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            await cursor.execute(fetch)
+            return await cursor.fetchall()
+
 
     async def fetch_user_resource(self, public_key):
         fetch = """
-        SELECT public_key, name, timestamp, quota FROM users
+        SELECT public_key, name, created_at, quota, created_by_admin_public_key,
+        updated_by_admin_public_key, updated_at
+        FROM users
         WHERE public_key='{0}'
         AND ({1}) >= start_block_num
         AND ({1}) < end_block_num;
@@ -109,7 +153,7 @@ class Database(object):
 
     async def fetch_all_user_resources(self):
         fetch = """
-        SELECT public_key, name, timestamp FROM users
+        SELECT public_key, name, created_at FROM users
         WHERE ({0}) >= start_block_num
         AND ({0}) < end_block_num;
         """.format(LATEST_BLOCK_NUM)
@@ -146,7 +190,7 @@ class Database(object):
         """.format(sensor_id, LATEST_BLOCK_NUM)
 
         fetch_sensor_owners = """
-        SELECT user_id, timestamp FROM sensor_owners
+        SELECT user_public_key, timestamp FROM sensor_owners
         WHERE sensor_id='{0}'
         AND ({1}) >= start_block_num
         AND ({1}) < end_block_num;
@@ -199,7 +243,7 @@ class Database(object):
                     """.format(sensor['sensor_id'], LATEST_BLOCK_NUM)
 
                     fetch_sensor_owners = """
-                    SELECT user_id, timestamp
+                    SELECT user_public_key, timestamp
                     FROM sensor_owners
                     WHERE sensor_id='{0}'
                     AND ({1}) >= start_block_num

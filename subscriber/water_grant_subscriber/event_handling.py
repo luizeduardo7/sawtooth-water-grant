@@ -39,14 +39,15 @@ def get_events_handler(database):
 
 def _handle_events(database, events):
     block_num, block_id = _parse_new_block(events)
-    try:
-        is_duplicate = _resolve_if_forked(database, block_num, block_id)
-        if not is_duplicate:
-            _apply_state_changes(database, events, block_num, block_id)
-        database.commit()
-    except psycopg2.DatabaseError as err:
-        print('Unable to handle event: %s', err)
-        database.rollback()
+    if block_num is not None:
+        try:
+            is_duplicate = _resolve_if_forked(database, block_num, block_id)
+            if not is_duplicate:
+                _apply_state_changes(database, events, block_num, block_id)
+            database.commit()
+        except psycopg2.DatabaseError as err:
+            print('Unable to handle event: %s', err)
+            database.rollback()
 
 
 def _parse_new_block(events):
@@ -82,7 +83,9 @@ def _apply_state_changes(database, events, block_num, block_id):
     for change in changes:
         data_type, resources = deserialize_data(change.address, change.value)
         database.insert_block({'block_num': block_num, 'block_id': block_id})
-        if data_type == AddressSpace.USER:
+        if data_type == AddressSpace.ADMIN:
+            _apply_admin_change(database, block_num, resources)
+        elif data_type == AddressSpace.USER:
             _apply_user_change(database, block_num, resources)
         elif data_type == AddressSpace.SENSOR:
             _apply_sensor_change(database, block_num, resources)
@@ -103,8 +106,14 @@ def _parse_state_changes(events):
             if NAMESPACE_REGEX.match(c.address)]
 
 
+def _apply_admin_change(database, block_num, admins):
+    for admin in admins:
+        admin['start_block_num'] = block_num
+        admin['end_block_num'] = MAX_BLOCK_NUMBER
+        database.insert_admin(admin)
+
+
 def _apply_user_change(database, block_num, users):
-    print("NOVO USUARIO")
     for user in users:
         user['start_block_num'] = block_num
         user['end_block_num'] = MAX_BLOCK_NUMBER
@@ -112,7 +121,6 @@ def _apply_user_change(database, block_num, users):
 
 
 def _apply_sensor_change(database, block_num, sensors):
-    print("NOVO SENSOR")
     for sensor in sensors:
         sensor['start_block_num'] = block_num
         sensor['end_block_num'] = MAX_BLOCK_NUMBER
