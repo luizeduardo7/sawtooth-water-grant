@@ -37,6 +37,7 @@ class RouteHandler(object):
         self._messenger = messenger
         self._database = database
 
+
     async def authenticate(self, request):
         body = await decode_request(request)
         required_fields = ['username', 'password']
@@ -62,9 +63,12 @@ class RouteHandler(object):
             'authorization': token,
             'adminflag': is_admin,
             'username': username})
+        
     
     async def create_admin(self, request):
-        await self._authorize(request)
+        # Valida se é um admin que está criando outro admin
+        admin_public_key = await self._public_key_from_token(request)
+        await self._validate_admin(admin_public_key)
         
         body = await decode_request(request)
         required_fields = ['username', 'name', 'password']
@@ -116,9 +120,7 @@ class RouteHandler(object):
 
         # Valida se há permissão de admin
         admin_public_key = body.get('created_by_admin_public_key')
-        admin_auth_info = await self._database.fetch_auth_resource(admin_public_key)
-        if admin_auth_info['is_admin'] is False:
-            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+        await self._validate_admin(admin_public_key)
         
         public_key, private_key = self._messenger.get_new_key_pair()
 
@@ -157,10 +159,12 @@ class RouteHandler(object):
             request.app['secret_key'], public_key)
 
         return json_response({'authorization': token})
+    
 
     async def list_users(self, _request):
         user_list = await self._database.fetch_all_user_resources()
         return json_response(user_list)
+    
 
     async def fetch_user(self, request):
         public_key = request.match_info.get('user_public_key', '')
@@ -171,6 +175,7 @@ class RouteHandler(object):
                 .format(public_key))
         return json_response(user)
     
+    
     async def update_user(self, request):
         body = await decode_request(request)
         # Primeira validação, verifica se há a nova cota e
@@ -180,9 +185,7 @@ class RouteHandler(object):
 
          # Valida se há permissão de admin
         admin_public_key = body.get('updated_by_admin_public_key')
-        admin_auth_info = await self._database.fetch_auth_resource(admin_public_key)
-        if admin_auth_info['is_admin'] is False:
-            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+        await self._validate_admin(admin_public_key)
 
         private_key = await self._authorize(request)
 
@@ -197,6 +200,7 @@ class RouteHandler(object):
 
         return json_response(
             {'data': 'Update user transaction submitted'})
+    
 
     async def create_sensor(self, request):
         private_key = await self._authorize(request)
@@ -214,10 +218,12 @@ class RouteHandler(object):
 
         return json_response(
             {'data': 'Create sensor transaction submitted'})
+    
 
     async def list_sensors(self, _request):
         sensor_list = await self._database.fetch_all_sensor_resources()
         return json_response(sensor_list)
+    
 
     async def fetch_sensor(self, request):
         sensor_id = request.match_info.get('sensor_id', '')
@@ -227,6 +233,7 @@ class RouteHandler(object):
                 'sensor com o ID '
                 '{} não foi encontrado.'.format(sensor_id))
         return json_response(sensor)
+    
     
     async def update_sensor(self, request):
         private_key = await self._authorize(request)
@@ -245,8 +252,9 @@ class RouteHandler(object):
 
         return json_response(
             {'data': 'Update sensor transaction submitted'})
+    
 
-    async def _authorize(self, request):
+    async def _public_key_from_token(self, request):
         token = request.headers.get('AUTHORIZATION')
         if token is None:
             raise ApiUnauthorized('Não foi provido token de autenticação.')
@@ -260,7 +268,11 @@ class RouteHandler(object):
         except BadSignature:
             raise ApiUnauthorized('Token de autenticação invalido.')
         
-        public_key = token_dict.get('public_key')
+        return token_dict.get('public_key')
+    
+
+    async def _authorize(self, request):        
+        public_key = await self._public_key_from_token(request)
         body = await decode_request(request)
 
         # Verifica se é há um chave de admin válida
@@ -278,14 +290,13 @@ class RouteHandler(object):
         return decrypt_private_key(request.app['aes_key'],
                                    public_key,
                                    auth_resource['encrypted_private_key'])
+    
 
-
-async def validate_admin(admin_public_key, database):
-        auth_resource = await database.fetch_auth_resource(admin_public_key)
-        print(auth_resource['is_admin'])
-        print(type(auth_resource['is_admin']))
-        if auth_resource['is_admin'] is False:
-            raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+    async def _validate_admin(self, admin_public_key):
+            auth_resource = await self._database.fetch_auth_resource(admin_public_key)
+            if auth_resource is not None and auth_resource['is_admin'] is False:
+                raise ApiBadRequest("Você não tem permissão para realizar esta ação!")
+        
 
 async def decode_request(request):
     try:
@@ -299,6 +310,7 @@ def validate_fields(required_fields, body):
         if body.get(field) is None:
             raise ApiBadRequest(
                 "O parâmetro '{}' é requerido.".format(field))
+        
 
 def encrypt_private_key(aes_key, public_key, private_key):
     init_vector = bytes.fromhex(public_key[:32])

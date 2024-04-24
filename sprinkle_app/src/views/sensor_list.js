@@ -33,6 +33,15 @@ const SensorList = {
   view (vnode) {
     return [
       m('.sensor-list',
+        m('input[type=text]', {
+          placeholder: 'Procurar por ID',
+          oninput: (e) => {
+            const searchId = e.target.value
+            api.get('sensors').then((sensors) => {
+              vnode.state.sensors = sortBy(sensors.filter(sensor => sensor.sensor_id.includes(searchId)), 'sensor_id')
+            })
+          }
+        }),
         m(Table, {
           headers: [
             'ID'
