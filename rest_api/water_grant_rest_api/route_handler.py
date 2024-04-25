@@ -225,6 +225,12 @@ class RouteHandler(object):
         return json_response(sensor_list)
     
 
+    async def list_sensors_by_owner(self, request):
+        public_key = request.match_info.get('user_public_key', '')
+        sensor_list = await self._database.fetch_sensors_by_owner(public_key)
+        return json_response(sensor_list)
+    
+
     async def fetch_sensor(self, request):
         sensor_id = request.match_info.get('sensor_id', '')
         sensor = await self._database.fetch_sensor_resource(sensor_id)

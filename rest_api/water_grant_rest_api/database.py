@@ -220,6 +220,23 @@ class Database(object):
                 return sensor
             except TypeError:
                 return None
+            
+    
+    async def fetch_sensors_by_owner(self, user_public_key):
+        fetch_sensors = """
+        SELECT sensor_id FROM sensor_owners
+        WHERE user_public_key='{0}'
+        AND ({1}) >= start_block_num
+        AND ({1}) < end_block_num;
+        """.format(user_public_key, LATEST_BLOCK_NUM)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            try:
+                await cursor.execute(fetch_sensors)
+                return await cursor.fetchall()
+            except TypeError:
+                return []
+            
 
     async def fetch_all_sensor_resources(self):
         fetch_sensors = """

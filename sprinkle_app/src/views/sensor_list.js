@@ -25,9 +25,16 @@ const api = require('../services/api.js')
 const SensorList = {
   oninit (vnode) {
     vnode.state.sensors = []
-    api.get('sensors').then((sensors) => {
+    if (api.getIsAdmin()) {
+      api.get('sensors').then((sensors) => {
         vnode.state.sensors = sortBy(sensors, 'sensor_id')
       })
+    } else {
+      const user_public_key = api.getPublicKey()
+      api.get(`/sensors/owner/${user_public_key}`).then((sensors) => {
+        vnode.state.sensors = sortBy(sensors, 'sensor_id')
+      })
+    }
   },
 
   view (vnode) {

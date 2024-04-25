@@ -65,8 +65,7 @@ const loggedInNavAsUser = () => {
   const username = api.getUserName(); 
   const links = [
     ['/register', 'Registrar Sensor'],
-    ['/sensors', 'Ver Registro de Sensores'],
-    // ['/users', 'Ver Usuários']
+    ['/sensors', 'Meus Sensores'],
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
