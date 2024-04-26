@@ -42,30 +42,33 @@ const sensorSubmitter = state => e => {
 const RegisterSensorForm = {
   view (vnode) {
     const setter = forms.stateSetter(vnode.state)
-    return m('.register-form', [
-      m('form', { onsubmit: sensorSubmitter(vnode.state) },
-      m('legend', 'Registrar Sensor'),
-      forms.textInput(setter('sensor_id'), 'ID do Sensor'),
-      layout.row([
-        forms.group('Latitude', forms.field(setter('latitude'), {
-          type: 'number',
-          step: 'any',
-          min: -90,
-          max: 90,
-        })),
-        forms.group('Longitude', forms.field(setter('longitude'), {
-          type: 'number',
-          step: 'any',
-          min: -180,
-          max: 180,
-        }))
-      ]),
-      m('.form-group',
-        m('.row.justify-content-end.align-items-end',
-          m('col-2',
-            m('button.btn.btn-primary',
-              'Registrar Sensor')))))
-    ])
+    return [
+    (api.getIsAdmin() === false) // Admin não pode registrar sensores
+    ? m('.register-form', [
+        m('form', { onsubmit: sensorSubmitter(vnode.state) },
+        m('legend', 'Registrar Sensor'),
+        forms.textInput(setter('sensor_id'), 'ID do Sensor'),
+        layout.row([
+          forms.group('Latitude', forms.field(setter('latitude'), {
+            type: 'number',
+            step: 'any',
+            min: -90,
+            max: 90,
+          })),
+          forms.group('Longitude', forms.field(setter('longitude'), {
+            type: 'number',
+            step: 'any',
+            min: -180,
+            max: 180,
+          }))
+        ]),
+        m('.form-group',
+          m('.row.justify-content-end.align-items-end',
+            m('col-2',
+              m('button.btn.btn-primary',
+                'Registrar Sensor')))))
+      ])
+    : 'Você não tem permissão para acessar esta página.']
   }
 }
 

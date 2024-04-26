@@ -100,6 +100,7 @@ def start_rest_api(host, port, messenger, database):
 
     app.router.add_post('/sensors', handler.create_sensor)
     app.router.add_get('/sensors', handler.list_sensors)
+    app.router.add_get('/sensors/owner/{user_public_key}', handler.list_sensors_by_owner)
     app.router.add_get('/sensors/{sensor_id}', handler.fetch_sensor)
     # Transferência de sensores desativada.
     # app.router.add_post(

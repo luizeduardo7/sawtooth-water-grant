@@ -68,32 +68,35 @@ const SignupForm = {
       }
     };
 
-    return m('.signup-form', [
-      m('form', { onsubmit: handleSubmit() },
-        m('legend', 'Criar Conta'),
-        forms.textInput(setter('username'), 'Username'),
-        forms.textInput(setter('name'), 'Nome'),
-        forms.passwordInput(setter('password'), 'Senha'),
+    return [
+      (api.getIsAdmin())
+      ? m('.signup-form', [
+          m('form', { onsubmit: handleSubmit() },
+            m('legend', 'Criar Conta'),
+            forms.textInput(setter('username'), 'Username'),
+            forms.textInput(setter('name'), 'Nome'),
+            forms.passwordInput(setter('password'), 'Senha'),
 
-        // Campo de seleção para escolher entre admin ou usuário
-        m('.form-group',
-          m('label', 'Tipo de Conta:'),
-          m('select.form-control', {
-            onchange: e => {
-              // Atualiza o estado para admin, se selecionado
-              // Caso contrário é user
-              vnode.state.accountType = e.target.value === 'admin'; 
-            }
-          },
-          m('option', { value: 'user' }, 'Usuário'),
-          m('option', { value: 'admin' }, 'Administrador'))),
+            // Campo de seleção para escolher entre admin ou usuário
+            m('.form-group',
+              m('label', 'Tipo de Conta:'),
+              m('select.form-control', {
+                onchange: e => {
+                  // Atualiza o estado para admin, se selecionado
+                  // Caso contrário é user
+                  vnode.state.accountType = e.target.value === 'admin'; 
+                }
+              },
+              m('option', { value: 'user' }, 'Usuário'),
+              m('option', { value: 'admin' }, 'Administrador'))),
 
-        m('.form-group',
-          m('.row.justify-content-end.align-items-end',
-            m('col-2',
-              m('button.btn.btn-primary',
-                'Criar Conta')))))
-    ])
+            m('.form-group',
+              m('.row.justify-content-end.align-items-end',
+                m('col-2',
+                  m('button.btn.btn-primary',
+                    'Criar Conta')))))
+        ])
+      : "Você não tem permissão para acessar esta página"]
   }
 }
 
