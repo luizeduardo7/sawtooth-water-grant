@@ -64,12 +64,13 @@ const UserDetailPage = {
       m('.container',
         layout.row(layout.staticField('Chave Pública', publicKey)),
         layout.row(layout.staticField('Registrado', timestamp)),
-        layout.row(layout.staticField('Cota concedida (m³)', quota)),
+        layout.row(layout.staticField('Conta anual concedida (m³)', quota * 12)),
+        layout.row(layout.staticField('Cota mensal concedida (m³)', quota)),
         layout.row(
           (api.getIsAdmin())
           ? m('.update-form', [
             m('form', { onsubmit: updateSubmitter(vnode.state, publicKey) },
-            m('legend', 'Atualizar Cota'),
+            m('legend', 'Atualizar Cota Mensal'),
             layout.row([
               forms.group('Nova cota (m³)', forms.field(setter('quota'), {
                 type: 'number',

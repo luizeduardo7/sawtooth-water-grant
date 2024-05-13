@@ -199,8 +199,6 @@ class Database(object):
         fetch_sensor_measurement = """
         SELECT measurement, timestamp FROM measurements
         WHERE sensor_id='{0}'
-        AND ({1}) >= start_block_num
-        AND ({1}) < end_block_num;
         """.format(sensor_id, LATEST_BLOCK_NUM)
 
         async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
