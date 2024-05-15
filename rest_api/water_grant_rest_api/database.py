@@ -150,6 +150,31 @@ class Database(object):
         async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
             await cursor.execute(fetch)
             return await cursor.fetchone()
+        
+    
+
+    async def fetch_user_quota_usage_resource(self, public_key):
+        fetch = """
+        SELECT SUM(last_measurements.measurement)
+        FROM (
+            SELECT sensor_id, MAX("timestamp") as max_timestamp
+            FROM public.measurements
+            WHERE sensor_id IN (
+                SELECT sensor_id
+                FROM public.sensor_owners
+                WHERE user_public_key='{0}'
+            )
+            GROUP BY sensor_id
+        ) AS last_measurements_timestamp
+        JOIN public.measurements AS last_measurements
+        ON last_measurements.sensor_id = last_measurements_timestamp.sensor_id
+        AND last_measurements."timestamp" = last_measurements_timestamp.max_timestamp
+        """.format(public_key)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            await cursor.execute(fetch)
+            return await cursor.fetchone()
+        
 
     async def fetch_all_user_resources(self):
         fetch = """

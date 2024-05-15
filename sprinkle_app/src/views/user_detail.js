@@ -47,11 +47,20 @@ const updateSubmitter = state => e => {
  * Displays information for a particular user
  */
 const UserDetailPage = {
-  oninit(vnode) {
-    api.get(`users/${vnode.attrs.publicKey}`)
+  async oninit(vnode) {
+    try {
+      await api.get(`users/${vnode.attrs.publicKey}`)
       .then(user => {vnode.state.user = user})
       .catch(api.alertError)
+
+      await api.get(`users/usage/${vnode.attrs.publicKey}`)
+      .then(quota_usage => {vnode.state.quota_usage = quota_usage})
+      .catch(api.alertError)
+    } catch (error) {
+      api.alertError(error);
+    }
   },
+
 
   view (vnode) {
     const setter = forms.stateSetter(vnode.state)
@@ -59,13 +68,17 @@ const UserDetailPage = {
     const timestamp = new Date(
       _.get(vnode.state, 'user.created_at', '') * 1000).toString()
     const quota = _.get(vnode.state, 'user.quota', '')
+    const quota_usage = _.get(vnode.state, 'quota_usage.sum', 0)
     return [
       layout.title(_.get(vnode.state, 'user.name', '')),
       m('.container',
         layout.row(layout.staticField('Chave Pública', publicKey)),
         layout.row(layout.staticField('Registrado', timestamp)),
-        layout.row(layout.staticField('Conta anual concedida (m³)', quota * 12)),
+        layout.row(layout.staticField('Cota anual concedida (m³)', quota * 12)),
         layout.row(layout.staticField('Cota mensal concedida (m³)', quota)),
+        layout.row(layout.staticField('Consumo mensal atual (m³)', quota_usage)),
+        layout.row(layout.staticField('Percentual mensal usado', 
+        (quota_usage / quota * 100).toFixed(2) + '%')),
         layout.row(
           (api.getIsAdmin())
           ? m('.update-form', [

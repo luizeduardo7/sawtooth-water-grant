@@ -175,6 +175,17 @@ class RouteHandler(object):
                 .format(public_key))
         return json_response(user)
     
+
+    async def fetch_user_quota_usage(self, request):
+        public_key = request.match_info.get('user_public_key', '')
+        user_quota_usage = await self._database.fetch_user_quota_usage_resource(
+            public_key)
+        if user_quota_usage is None:
+            raise ApiNotFound(
+                'usuário com a chave pública {} não foi encontrado.'
+                .format(public_key))
+        return json_response(user_quota_usage)
+    
     
     async def update_user(self, request):
         body = await decode_request(request)
