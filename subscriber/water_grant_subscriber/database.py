@@ -40,6 +40,32 @@ CREATE TABLE IF NOT EXISTS auth (
 )
 """
 
+CREATE_ADMIN_STMTS = """
+CREATE TABLE IF NOT EXISTS admins (
+    id               bigserial PRIMARY KEY,
+    public_key       varchar UNIQUE,
+    name             varchar,
+    created_at       bigint,
+    start_block_num  bigint,
+    end_block_num    bigint
+);
+"""
+
+CREATE_USER_STMTS = """
+CREATE TABLE IF NOT EXISTS users (
+    id                           bigserial PRIMARY KEY,
+    public_key                   varchar UNIQUE,
+    name                         varchar,
+    created_at                   bigint,
+    quota                        float,
+    created_by_admin_public_key  varchar references admins(public_key),
+    updated_by_admin_public_key  varchar references admins(public_key),
+    updated_at                   bigint,
+    start_block_num              bigint,
+    end_block_num                bigint
+);
+"""
+
 CREATE_SENSOR_STMTS = """
 CREATE TABLE IF NOT EXISTS sensors (
     id               bigserial PRIMARY KEY,
@@ -53,7 +79,7 @@ CREATE TABLE IF NOT EXISTS sensors (
 CREATE_MEASUREMENT_STMTS = """
 CREATE TABLE IF NOT EXISTS measurements (
     id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
+    sensor_id        varchar references sensors(sensor_id),
     measurement      float,
     timestamp        bigint,
     start_block_num  bigint,
@@ -64,7 +90,7 @@ CREATE TABLE IF NOT EXISTS measurements (
 CREATE_SENSOR_LOCATION_STMTS = """
 CREATE TABLE IF NOT EXISTS sensor_locations (
     id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
+    sensor_id        varchar references sensors(sensor_id),
     latitude         bigint,
     longitude        bigint,
     timestamp        bigint,
@@ -76,39 +102,14 @@ CREATE TABLE IF NOT EXISTS sensor_locations (
 CREATE_SENSOR_OWNER_STMTS = """
 CREATE TABLE IF NOT EXISTS sensor_owners (
     id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
-    user_public_key  varchar,
+    sensor_id        varchar references sensors(sensor_id),
+    user_public_key  varchar references users(public_key),
     timestamp        bigint,
     start_block_num  bigint,
     end_block_num    bigint
 );
 """
 
-CREATE_USER_STMTS = """
-CREATE TABLE IF NOT EXISTS users (
-    id                           bigserial PRIMARY KEY,
-    public_key                   varchar UNIQUE,
-    name                         varchar,
-    created_at                   bigint,
-    quota                        float,
-    created_by_admin_public_key  varchar,
-    updated_by_admin_public_key  varchar,
-    updated_at                   bigint,
-    start_block_num              bigint,
-    end_block_num                bigint
-);
-"""
-
-CREATE_ADMIN_STMTS = """
-CREATE TABLE IF NOT EXISTS admins (
-    id               bigserial PRIMARY KEY,
-    public_key       varchar UNIQUE,
-    name             varchar,
-    created_at       bigint,
-    start_block_num  bigint,
-    end_block_num    bigint
-);
-"""
 # REMOVER INSERT_INITIAL_ADMIN
 INSERT_INITIAL_ADMIN = """
 INSERT INTO auth
@@ -161,6 +162,12 @@ class Database(object):
             print('Creating table: auth')
             cursor.execute(CREATE_AUTH_STMTS)
 
+            print('Creating table: admins')
+            cursor.execute(CREATE_ADMIN_STMTS)
+
+            print('Creating table: users')
+            cursor.execute(CREATE_USER_STMTS)
+
             print('Creating table: sensors')
             cursor.execute(CREATE_SENSOR_STMTS)
 
@@ -172,12 +179,6 @@ class Database(object):
 
             print('Creating table: sensor_owners')
             cursor.execute(CREATE_SENSOR_OWNER_STMTS)
-
-            print('Creating table: users')
-            cursor.execute(CREATE_USER_STMTS)
-
-            print('Creating table: admins')
-            cursor.execute(CREATE_ADMIN_STMTS)
 
             print('Inserting initial admin')
             cursor.execute(INSERT_INITIAL_ADMIN)

@@ -120,7 +120,7 @@ class WaterGrantState(object):
             created_at=created_at,
             quota=quota,
             created_by_admin_public_key=created_by_admin_public_key,
-            updated_by_admin_public_key="")
+            updated_by_admin_public_key=created_by_admin_public_key)
         container = user_pb2.UserContainer()
         state_entries = self._context.get_state(
             addresses=[address], timeout=self._timeout)
