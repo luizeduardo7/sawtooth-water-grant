@@ -155,9 +155,9 @@ class Database(object):
 
     async def fetch_user_quota_usage_resource(self, public_key):
         fetch = """
-        SELECT SUM(last_measurements.measurement)
+        SELECT SUM(measurements.measurement)
         FROM (
-            SELECT sensor_id, MAX("timestamp") as max_timestamp
+            SELECT sensor_id, DATE_TRUNC('month', MAX(to_timestamp("timestamp"))) as max_month
             FROM public.measurements
             WHERE sensor_id IN (
                 SELECT sensor_id
@@ -165,10 +165,10 @@ class Database(object):
                 WHERE user_public_key='{0}'
             )
             GROUP BY sensor_id
-        ) AS last_measurements_timestamp
-        JOIN public.measurements AS last_measurements
-        ON last_measurements.sensor_id = last_measurements_timestamp.sensor_id
-        AND last_measurements."timestamp" = last_measurements_timestamp.max_timestamp
+        ) AS last_measurements_month
+        JOIN public.measurements ON measurements.sensor_id = last_measurements_month.sensor_id
+        AND DATE_TRUNC('month', to_timestamp(measurements."timestamp")) = last_measurements_month.max_month
+
         """.format(public_key)
 
         async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
