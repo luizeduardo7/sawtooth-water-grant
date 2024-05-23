@@ -220,6 +220,23 @@ class RouteHandler(object):
         required_fields = ['latitude', 'longitude', 'sensor_id']
         validate_fields(required_fields, body)
 
+
+        public_key = await self._public_key_from_token(request)
+
+        user_quota = await self._database.fetch_user_quota_resource(public_key)
+        user_quota_value = user_quota.get('quota')
+
+        user_quota_usage = await self._database.fetch_user_quota_usage_resource(
+            public_key)
+        user_quota_usage_value = user_quota_usage.get('sum')
+        
+        if user_quota_usage_value > user_quota_value:
+            raise ApiBadRequest(
+                'Consumo atual excede cota concedida. Limite: {} m³.'
+                .format(user_quota_value)
+                + ' Consumo atual: {} m³. Regularize e tente novamente.'
+                .format(user_quota_usage_value))
+
         await self._messenger.send_create_sensor_transaction(
             private_key=private_key,
             latitude=body.get('latitude'),

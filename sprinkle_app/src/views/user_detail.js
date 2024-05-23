@@ -74,10 +74,9 @@ const UserDetailPage = {
       m('.container',
         layout.row(layout.staticField('Chave Pública', publicKey)),
         layout.row(layout.staticField('Registrado', timestamp)),
-        layout.row(layout.staticField('Cota anual concedida (m³)', quota * 12)),
-        layout.row(layout.staticField('Cota mensal concedida (m³)', quota)),
-        layout.row(layout.staticField('Consumo mensal atual (m³)', quota_usage)),
-        layout.row(layout.staticField('Percentual mensal usado', 
+        layout.row(layout.staticField('Cota concedida (m³)', quota)),
+        layout.row(layout.staticField('Consumo atual (m³)', quota_usage)),
+        layout.row(layout.staticField('Percentual usado', 
         (quota_usage / quota * 100).toFixed(2) + '%')),
         layout.row(
           (api.getIsAdmin())

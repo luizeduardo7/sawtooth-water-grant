@@ -151,11 +151,21 @@ class Database(object):
             await cursor.execute(fetch)
             return await cursor.fetchone()
         
-    
+
+    async def fetch_user_quota_resource(self, public_key):
+        fetch = """
+        SELECT quota FROM users
+        WHERE public_key='{0}'
+        """.format(public_key)
+
+        async with self._conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            await cursor.execute(fetch)
+            return await cursor.fetchone()    
+        
 
     async def fetch_user_quota_usage_resource(self, public_key):
         fetch = """
-        SELECT SUM(measurements.measurement)
+        SELECT COALESCE(SUM(measurements.measurement), 0) AS sum
         FROM (
             SELECT sensor_id, DATE_TRUNC('month', MAX(to_timestamp("timestamp"))) as max_month
             FROM public.measurements
