@@ -1,11 +1,22 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, jsonify
 import requests
-import base64
-import payload_pb2  # Importa o módulo gerado pelo Protobuf
+from config import Config
+from utils import decode_payload
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
-SAWTOOTH_REST_API_URL = 'http://rest-api:8008'
+def build_url(endpoint):
+    base_url = app.config['SAWTOOTH_REST_API_URL']
+    return f"{base_url}/{endpoint}"
+
+def handle_error_response(response):
+    if response.status_code == 404:
+        return jsonify({'error': 'Not found'}), 404
+    elif response.status_code >= 400:
+        return jsonify({'error': 'Bad request'}), response.status_code
+    else:
+        return response.json(), response.status_code
 
 @app.route('/')
 def index():
@@ -13,67 +24,60 @@ def index():
 
 @app.route('/blocks')
 def get_blocks():
-    response = requests.get(f'{SAWTOOTH_REST_API_URL}/blocks')
-    blocks = response.json()
-    return jsonify(blocks)
+    response = requests.get(build_url('blocks'))
+    if response.status_code == 200:
+        blocks = response.json()
+        return jsonify(blocks)
+    else:
+        return handle_error_response(response)
 
 @app.route('/state')
 def get_state():
-    response = requests.get(f'{SAWTOOTH_REST_API_URL}/state')
-    state = response.json()
-    return jsonify(state)
+    response = requests.get(build_url('state'))
+    if response.status_code == 200:
+        state = response.json()
+        return jsonify(state)
+    else:
+        return handle_error_response(response)
 
 @app.route('/transactions')
 def get_transactions():
-    response = requests.get(f'{SAWTOOTH_REST_API_URL}/transactions')
-    transactions = response.json()
-    return jsonify(transactions)
+    response = requests.get(build_url('transactions'))
+    if response.status_code == 200:
+        transactions = response.json()
+        for transaction in transactions.get('data', []):
+            transaction['payload'] = decode_payload(transaction['payload'])
+        return jsonify(transactions)
+    else:
+        return handle_error_response(response)
 
-# Função para decodificar o payload
-def decode_payload(payload):
-    decoded_bytes = base64.b64decode(payload)
-    payload_obj = payload_pb2.Payload()
-    payload_obj.ParseFromString(decoded_bytes)
-    return {
-        'action': payload_pb2.Payload.Action.Name(payload_obj.action),
-        'timestamp': payload_obj.timestamp,
-        'create_admin': {
-            'name': payload_obj.create_admin.name
-        } if payload_obj.HasField('create_admin') else None,
-        'create_user': {
-            'name': payload_obj.create_user.name,
-            'quota': payload_obj.create_user.quota,
-            'created_by_admin_public_key': payload_obj.create_user.created_by_admin_public_key
-        } if payload_obj.HasField('create_user') else None,
-        'update_user': {
-            'user_public_key': payload_obj.update_user.user_public_key,
-            'quota': payload_obj.update_user.quota,
-            'updated_by_admin_public_key': payload_obj.update_user.updated_by_admin_public_key
-        } if payload_obj.HasField('update_user') else None,
-        'create_sensor': {
-            'sensor_id': payload_obj.create_sensor.sensor_id,
-            'latitude': payload_obj.create_sensor.latitude,
-            'longitude': payload_obj.create_sensor.longitude,
-            'measurement': payload_obj.create_sensor.measurement
-        } if payload_obj.HasField('create_sensor') else None,
-        'update_sensor': {
-            'sensor_id': payload_obj.update_sensor.sensor_id,
-            'measurement': payload_obj.update_sensor.measurement
-        } if payload_obj.HasField('update_sensor') else None
-    }
-
-# Rota para obter uma transação por ID
 @app.route('/transactions/<transaction_id>')
 def get_transaction_by_id(transaction_id):
-    response = requests.get(f'{SAWTOOTH_REST_API_URL}/transactions/{transaction_id}')
+    response = requests.get(build_url(f"transactions/{transaction_id}"))
     if response.status_code == 200:
         transaction = response.json()
-        # Decodifica o payload para torná-lo legível
-        decoded_payload = decode_payload(transaction['data']['payload'])
-        transaction['data']['payload'] = decoded_payload
+        transaction['data']['payload'] = decode_payload(transaction['data']['payload'])
         return jsonify(transaction)
     else:
-        return jsonify({'error': 'Transaction not found'}), 404
+        return handle_error_response(response)
+
+@app.route('/blocks/<block_id>')
+def get_block_by_id(block_id):
+    response = requests.get(build_url(f"blocks/{block_id}"))
+    if response.status_code == 200:
+        block = response.json()
+        return jsonify(block)
+    else:
+        return handle_error_response(response)
+
+@app.route('/state/<address>')
+def get_state_by_address(address):
+    response = requests.get(build_url(f"state/{address}"))
+    if response.status_code == 200:
+        state = response.json()
+        return jsonify(state)
+    else:
+        return handle_error_response(response)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
