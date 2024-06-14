@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoria Blockchain</title>
+</head>
+<body>
+    <h1>Auditoria Blockchain Outorga ANA</h1>
+    <button onclick="fetchData('blocks')">Blocos</button>
+    <button onclick="fetchData('state')">Estados</button>
+    <button onclick="fetchData('transactions')">Transações</button>
+    <input type="text" id="transactionId" placeholder="ID da Transação">
+    <button onclick="fetchTransactionById()">Transação por ID</button>
+    <pre id="result"></pre>
+
+    <script>
+        function fetchData(endpoint) {
+            fetch(`/${endpoint}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function fetchTransactionById() {
+            const transactionId = document.getElementById('transactionId').value;
+            fetch(`/transactions/${transactionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+    </script>
+</body>
+</html>

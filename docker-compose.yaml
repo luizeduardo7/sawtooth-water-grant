@@ -165,3 +165,21 @@ services:
     depends_on:
       - water-grant-shell
       - water-grant-rest-api
+
+  audit-app:
+    build:
+      context: ./audit_app
+    image: audit-app
+    container_name: audit-app
+    volumes:
+      - ./audit_app:/app
+    expose:
+      - 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - water-grant-shell
+      - rest-api
+    environment:
+      - FLASK_ENV=development
+    
