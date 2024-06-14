@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import requests
 from config import Config
 from utils import decode_payload
@@ -27,6 +27,10 @@ def get_blocks():
     response = requests.get(build_url('blocks'))
     if response.status_code == 200:
         blocks = response.json()
+        for block in blocks.get('data', []):
+            for batch in block['batches']:
+                for transaction in batch['transactions']:
+                    transaction['payload'] = decode_payload(transaction['payload'])
         return jsonify(blocks)
     else:
         return handle_error_response(response)
@@ -78,6 +82,42 @@ def get_state_by_address(address):
         return jsonify(state)
     else:
         return handle_error_response(response)
+
+@app.route('/batches')
+def get_batches():
+    response = requests.get(build_url('batches'))
+    if response.status_code == 200:
+        batches = response.json()
+        for batch in batches.get('data', []):
+            for transaction in batch['transactions']:
+                transaction['payload'] = decode_payload(transaction['payload'])
+        return jsonify(batches)
+    else:
+        return handle_error_response(response)
+
+@app.route('/transactions/search')
+def search_transactions():
+    public_key = request.args.get('public_key')
+    if not public_key:
+        return jsonify({'error': 'Public key is required'}), 400
+
+    response = requests.get(build_url('transactions'))
+    if response.status_code == 200:
+        transactions = response.json()
+        filtered_transactions = []
+        for transaction in transactions.get('data', []):
+            transaction['payload'] = decode_payload(transaction['payload'])
+            if transaction['header']['signer_public_key'] == public_key:
+                filtered_transactions.append(transaction)
+            elif transaction['payload'].get('create_user') and transaction['payload']['create_user']['created_by_admin_public_key'] == public_key:
+                filtered_transactions.append(transaction)
+            elif transaction['payload'].get('update_user') and transaction['payload']['update_user']['updated_by_admin_public_key'] == public_key:
+                filtered_transactions.append(transaction)
+        
+        return jsonify({'data': filtered_transactions})
+    else:
+        return handle_error_response(response)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -9,10 +9,13 @@
 <body>
     <h1>Auditoria Blockchain Outorga ANA</h1>
     <button onclick="fetchData('blocks')">Blocos</button>
-    <button onclick="fetchData('state')">Estados</button>
+    <button onclick="fetchData('state')">State</button>
     <button onclick="fetchData('transactions')">Transações</button>
     <input type="text" id="transactionId" placeholder="ID da Transação">
     <button onclick="fetchTransactionById()">Transação por ID</button>
+    <button onclick="fetchData('batches')">Batches</button>
+    <input type="text" id="publicKey" placeholder="Chave Pública">
+    <button onclick="searchTransactionsByPublicKey()">Buscar Transações por Chave Pública</button>
     <pre id="result"></pre>
 
     <script>
@@ -27,6 +30,15 @@
         function fetchTransactionById() {
             const transactionId = document.getElementById('transactionId').value;
             fetch(`/transactions/${transactionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function searchTransactionsByPublicKey() {
+            const publicKey = document.getElementById('publicKey').value;
+            fetch(`/transactions/search?public_key=${publicKey}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('result').textContent = JSON.stringify(data, null, 2);
