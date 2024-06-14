@@ -40,45 +40,12 @@ CREATE TABLE IF NOT EXISTS auth (
 )
 """
 
-CREATE_SENSOR_STMTS = """
-CREATE TABLE IF NOT EXISTS sensors (
+CREATE_ADMIN_STMTS = """
+CREATE TABLE IF NOT EXISTS admins (
     id               bigserial PRIMARY KEY,
-    sensor_id        varchar UNIQUE,
-    timestamp        bigint,
-    start_block_num  bigint,
-    end_block_num    bigint
-);
-"""
-
-CREATE_MEASUREMENT_STMTS = """
-CREATE TABLE IF NOT EXISTS measurements (
-    id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
-    measurement      float,
-    timestamp        bigint,
-    start_block_num  bigint,
-    end_block_num    bigint
-);
-"""
-
-CREATE_SENSOR_LOCATION_STMTS = """
-CREATE TABLE IF NOT EXISTS sensor_locations (
-    id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
-    latitude         bigint,
-    longitude        bigint,
-    timestamp        bigint,
-    start_block_num  bigint,
-    end_block_num    bigint
-);
-"""
-
-CREATE_SENSOR_OWNER_STMTS = """
-CREATE TABLE IF NOT EXISTS sensor_owners (
-    id               bigserial PRIMARY KEY,
-    sensor_id        varchar,
-    user_public_key  varchar,
-    timestamp        bigint,
+    public_key       varchar UNIQUE,
+    name             varchar,
+    created_at       bigint,
     start_block_num  bigint,
     end_block_num    bigint
 );
@@ -91,23 +58,63 @@ CREATE TABLE IF NOT EXISTS users (
     name                         varchar,
     created_at                   bigint,
     quota                        float,
-    created_by_admin_public_key  varchar,
-    updated_by_admin_public_key  varchar,
+    created_by_admin_public_key  varchar references admins(public_key),
+    updated_by_admin_public_key  varchar references admins(public_key),
     updated_at                   bigint,
     start_block_num              bigint,
     end_block_num                bigint
 );
 """
 
-CREATE_ADMIN_STMTS = """
-CREATE TABLE IF NOT EXISTS admins (
+CREATE_SENSOR_STMTS = """
+CREATE TABLE IF NOT EXISTS sensors (
     id               bigserial PRIMARY KEY,
-    public_key       varchar UNIQUE,
-    name             varchar,
+    sensor_id        varchar UNIQUE,
     created_at       bigint,
     start_block_num  bigint,
     end_block_num    bigint
 );
+"""
+
+CREATE_MEASUREMENT_STMTS = """
+CREATE TABLE IF NOT EXISTS measurements (
+    id               bigserial PRIMARY KEY,
+    sensor_id        varchar references sensors(sensor_id),
+    measurement      float,
+    timestamp        bigint,
+    start_block_num  bigint,
+    end_block_num    bigint
+);
+"""
+
+CREATE_SENSOR_LOCATION_STMTS = """
+CREATE TABLE IF NOT EXISTS sensor_locations (
+    id               bigserial PRIMARY KEY,
+    sensor_id        varchar references sensors(sensor_id),
+    latitude         bigint,
+    longitude        bigint,
+    timestamp        bigint,
+    start_block_num  bigint,
+    end_block_num    bigint
+);
+"""
+
+CREATE_SENSOR_OWNER_STMTS = """
+CREATE TABLE IF NOT EXISTS sensor_owners (
+    id               bigserial PRIMARY KEY,
+    sensor_id        varchar references sensors(sensor_id),
+    user_public_key  varchar references users(public_key),
+    timestamp        bigint,
+    start_block_num  bigint,
+    end_block_num    bigint
+);
+"""
+
+# REMOVER INSERT_INITIAL_ADMIN
+INSERT_INITIAL_ADMIN = """
+INSERT INTO auth
+(public_key, username, hashed_password, encrypted_private_key, is_admin)
+VALUES('038713b42df2e514aa654495ecda8a8f9a6cd75760e99df2ff6f02dccb46446c81', 'admin', '243262243132246a395a4b744676364a7045516770493668514d43322e546761376e73477442754c61354f5a6a6174586b41684964354568596c7061', 'e47570d73c1334498f14e9bab8de4d5e8d6408a646e29cb13a9455bc9b393157d0825ca4c783654f01d98870216f743b33036ef4b710e78bfd136e9465a23e3d', true);
 """
 
 class Database(object):
@@ -155,6 +162,12 @@ class Database(object):
             print('Creating table: auth')
             cursor.execute(CREATE_AUTH_STMTS)
 
+            print('Creating table: admins')
+            cursor.execute(CREATE_ADMIN_STMTS)
+
+            print('Creating table: users')
+            cursor.execute(CREATE_USER_STMTS)
+
             print('Creating table: sensors')
             cursor.execute(CREATE_SENSOR_STMTS)
 
@@ -167,11 +180,8 @@ class Database(object):
             print('Creating table: sensor_owners')
             cursor.execute(CREATE_SENSOR_OWNER_STMTS)
 
-            print('Creating table: users')
-            cursor.execute(CREATE_USER_STMTS)
-
-            print('Creating table: admins')
-            cursor.execute(CREATE_ADMIN_STMTS)
+            print('Inserting initial admin')
+            cursor.execute(INSERT_INITIAL_ADMIN)
 
         self._conn.commit()
 
@@ -377,9 +387,10 @@ class Database(object):
         insert_sensor = """
         INSERT INTO sensors (
         sensor_id,
+        created_at,
         start_block_num,
         end_block_num)
-        VALUES (%s, %s, %s)
+        VALUES (%s, %s, %s, %s)
         ON CONFLICT (sensor_id) DO UPDATE
         SET 
             start_block_num = EXCLUDED.start_block_num,
@@ -390,6 +401,7 @@ class Database(object):
             cursor.execute(update_sensor)
             cursor.execute(insert_sensor, (
                 sensor_dict['sensor_id'],
+                sensor_dict['created_at'],
                 sensor_dict['start_block_num'],
                 sensor_dict['end_block_num'],
             ))
@@ -441,27 +453,26 @@ class Database(object):
             sensor_dict['end_block_num'],
             sensor_dict['sensor_id'])
 
-        insert_measurements = [
-            """
-            INSERT INTO measurements (
-            sensor_id,
-            measurement,
-            timestamp,
-            start_block_num,
-            end_block_num)
-            VALUES ('{}', '{}', '{}', '{}', '{}');
-            """.format(
-                sensor_dict['sensor_id'],
-                measurement['measurement'],
-                measurement['timestamp'],
-                sensor_dict['start_block_num'],
-                sensor_dict['end_block_num'])
-            for measurement in sensor_dict['measurements']
-        ]
+        measurement = sensor_dict['measurements'][-1]
+        
+        insert_measurement =  """
+        INSERT INTO measurements (
+        sensor_id,
+        measurement,
+        timestamp,
+        start_block_num,
+        end_block_num)
+        VALUES ('{}', '{}', '{}', '{}', '{}');
+        """.format(
+            sensor_dict['sensor_id'],
+            measurement['measurement'],
+            measurement['timestamp'],
+            sensor_dict['start_block_num'],
+            sensor_dict['end_block_num'])
+
         with self._conn.cursor() as cursor:
             cursor.execute(update_measurements)
-            for insert in insert_measurements:
-                cursor.execute(insert)
+            cursor.execute(insert_measurement) 
                 
     def _insert_sensor_owners(self, sensor_dict):
             update_sensor_owners = """

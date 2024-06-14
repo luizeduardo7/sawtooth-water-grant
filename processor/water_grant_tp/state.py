@@ -120,7 +120,7 @@ class WaterGrantState(object):
             created_at=created_at,
             quota=quota,
             created_by_admin_public_key=created_by_admin_public_key,
-            updated_by_admin_public_key="")
+            updated_by_admin_public_key=created_by_admin_public_key)
         container = user_pb2.UserContainer()
         state_entries = self._context.get_state(
             addresses=[address], timeout=self._timeout)
@@ -193,7 +193,7 @@ class WaterGrantState(object):
             longitude (int): Initial latitude of the sensor
             measurement (double): Measurement value of the sensor
             sensor_id (str): Unique ID of the sensor
-            timestamp (int): Unix UTC timestamp of when the user was created
+            timestamp (int): Unix UTC timestamp of when the sensor was created
         """
         address = addresser.get_sensor_address(sensor_id)
         owner = sensor_pb2.Sensor.Owner(
@@ -208,6 +208,7 @@ class WaterGrantState(object):
             timestamp=timestamp)
         sensor = sensor_pb2.Sensor(
             sensor_id=sensor_id,
+            created_at=timestamp,
             owners=[owner],
             locations=[location],
             measurements=[measurement_value])
@@ -225,6 +226,13 @@ class WaterGrantState(object):
         self._context.set_state(updated_state, timeout=self._timeout)
 
     def update_sensor(self, measurement_value, sensor_id, timestamp):
+        """Updates a sensor in state
+
+        Args:
+            measurement_value (double): New measurement value
+            sensor_id (str): Unique ID of the sensor
+            timestamp (int): Unix UTC timestamp of when the sensor was updated
+        """
         measurement = sensor_pb2.Sensor.Measurement(
             measurement=measurement_value,
             timestamp=timestamp)

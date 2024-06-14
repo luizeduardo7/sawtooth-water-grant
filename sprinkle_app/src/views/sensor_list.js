@@ -45,7 +45,10 @@ const SensorList = {
           oninput: (e) => {
             const searchId = e.target.value
             api.get('sensors').then((sensors) => {
-              vnode.state.sensors = sortBy(sensors.filter(sensor => sensor.sensor_id.includes(searchId)), 'sensor_id')
+              vnode.state.sensors = sortBy(
+                sensors.filter(
+                  sensor => sensor.sensor_id.includes(searchId)),
+                  'sensor_id')
             })
           }
         }),

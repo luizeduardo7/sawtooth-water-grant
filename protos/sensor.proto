@@ -32,10 +32,13 @@ message Sensor {
     // real world (for example a serial number)
     string sensor_id = 1;
 
+    // Approximately when the sensor was registered, as a Unix UTC timestamp
+    uint64 created_at = 2;
+
     // Ordered oldest to newest by timestamp
-    repeated Owner owners = 2;
-    repeated Location locations = 3;
-    repeated Measurement measurements = 4;
+    repeated Owner owners = 3;
+    repeated Location locations = 4;
+    repeated Measurement measurements = 5;
 }
 
 
