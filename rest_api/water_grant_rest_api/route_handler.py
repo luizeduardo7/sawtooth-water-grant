@@ -121,8 +121,6 @@ class RouteHandler(object):
         # Valida se há permissão de admin
         admin_public_key = body.get('created_by_admin_public_key')
         await self._validate_admin(admin_public_key)
-        
-        public_key, private_key = self._messenger.get_new_key_pair()
 
         username = body.get('username')
         user_auth_info = await self._database.fetch_auth_resource(username)
@@ -130,6 +128,8 @@ class RouteHandler(object):
             raise ApiUnauthorized(
                 'Já existe um usuário com esse username.'
                 'Por favor, insira outro.')
+        
+        public_key, private_key = self._messenger.get_new_key_pair()        
         
         encrypted_private_key = encrypt_private_key(
             request.app['aes_key'], public_key, private_key)
