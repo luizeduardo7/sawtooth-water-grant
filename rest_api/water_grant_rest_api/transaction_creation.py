@@ -158,6 +158,7 @@ def make_update_user_transaction(transaction_signer,
 
 def make_create_sensor_transaction(transaction_signer,
                                    batch_signer,
+                                   user_quota_usage_value,
                                    latitude,
                                    longitude,
                                    measurement,
@@ -168,6 +169,7 @@ def make_create_sensor_transaction(transaction_signer,
     Args:
         transaction_signer (sawtooth_signing.Signer): The transaction key pair
         batch_signer (sawtooth_signing.Signer): The batch key pair
+        user_quota_usage_value: Actual quota usage of the user
         latitude (int): Initial latitude of the sensor
         longitude (int): Initial latitude of the sensor
         measurement: Initial measurement of the sensor
@@ -190,7 +192,8 @@ def make_create_sensor_transaction(transaction_signer,
         sensor_id=sensor_id,
         latitude=latitude,
         longitude=longitude,
-        measurement=measurement)
+        measurement=measurement,
+        user_quota_usage_value=user_quota_usage_value)
 
     payload = payload_pb2.Payload(
         action=payload_pb2.Payload.CREATE_SENSOR,

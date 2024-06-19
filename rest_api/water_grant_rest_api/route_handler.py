@@ -239,6 +239,7 @@ class RouteHandler(object):
 
         await self._messenger.send_create_sensor_transaction(
             private_key=private_key,
+            user_quota_usage_value=user_quota_usage_value,
             latitude=body.get('latitude'),
             longitude=body.get('longitude'),
             sensor_id=body.get('sensor_id'),
