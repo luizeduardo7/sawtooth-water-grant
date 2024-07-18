@@ -125,7 +125,7 @@ const SensorDetailPage = {
       m('.container',
         layout.row(layout.staticField('Leitura atual (m³)', measurement)),
         layout.row(layout.staticField('Proprietário', owner)),
-        layout.row(layout.staticField('Criado', created)),
+        layout.row(layout.staticField('Cadastrado', created)),
         layout.row(layout.staticField('Atualizado', updated))),
       m(MapWidget, {
         coordinates: coordinates

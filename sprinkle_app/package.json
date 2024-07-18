@@ -1,7 +1,7 @@
 {
   "name": "sprinkle_app",
   "version": "1.0.0",
-  "description": "A Sawtooth Water Grant client web app for tracking works of art",
+  "description": "A Sawtooth Water Grant client web app for tracking water grants",
   "main": "",
   "scripts": {
     "watch": "webpack-dev-server --env development --hot",
@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/hyperledger/education-sawtooth-water-grant#readme",
+  "homepage": "https://github.com/luizeduardo7/sawtooth-water-grant#readme",
   "dependencies": {
     "bootstrap": "^4.1.1",
     "jquery": "^3.3.1",

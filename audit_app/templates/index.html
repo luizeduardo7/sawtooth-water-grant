@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <title>Auditoria Blockchain</title>
     <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            flex: 1;
+            padding-bottom: 60px; /* altura do rodapé */
+        }
         .loading-spinner {
             display: none;
             margin: 20px auto;
@@ -23,6 +33,18 @@
         }
         .result-container {
             margin-top: 20px;
+        }
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #007bff;
+            text-align: center;
+            padding: 10px 0;
+        }
+        .footer img {
+            height: 50px;
         }
     </style>
 </head>
@@ -49,6 +71,10 @@
         </div>
         <div class="loading-spinner" id="loading-spinner"></div>
         <pre id="result" class="result-container bg-light p-3 border rounded"></pre>
+    </div>
+
+    <div class="footer">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
     </div>
 
     <script>
