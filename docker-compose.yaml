@@ -144,6 +144,8 @@ services:
       POSTGRES_DB: water-grant
     ports:
       - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
   adminer:
     image: adminer
@@ -165,3 +167,6 @@ services:
     depends_on:
       - water-grant-shell
       - water-grant-rest-api
+
+volumes:
+  db_data:
