@@ -82,8 +82,8 @@ def start_rest_api(host, port, messenger, database):
     asyncio.ensure_future(database.connect())
 
     app = web.Application(loop=loop)
-    # WARNING: UNSAFE KEY STORAGE
-    # In a production application these keys should be passed in more securely
+    # PERIGO: ARMAZENAMENTO DE CHAVE INSEGURO
+    # Em uma aplicação de produção, essas chaves devem ser passadas de forma mais segura
     app['aes_key'] = 'ffffffffffffffffffffffffffffffff'
     app['secret_key'] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
 

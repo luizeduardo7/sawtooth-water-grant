@@ -54,7 +54,7 @@ const loggedInNavAsAdmin = () => {
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
-    m('.nav-item.nav-link', `Bem-vindo(a), ${username}`),
+    m('.nav-item.nav-link', `Administrador: ${username}`),
     navigation.link('/signup', 'Criar Conta'),
     // navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
@@ -69,7 +69,7 @@ const loggedInNavAsUser = () => {
   ]
   return m(navigation.Navbar, {}, [
     navigation.links(links),
-    m('.nav-item.nav-link', `Bem-vindo(a), ${username}`),
+    m('.nav-item.nav-link', `Usuário: ${username}`),
     navigation.link('/profile', 'Perfil'),
     navigation.button('/logout', 'Sair')
   ])

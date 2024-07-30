@@ -107,6 +107,7 @@ class Messenger(object):
 
     async def send_create_sensor_transaction(self,
                                              private_key,
+                                             user_quota_usage_value,
                                              latitude,
                                              longitude,
                                              sensor_id,
@@ -117,6 +118,7 @@ class Messenger(object):
         batch = make_create_sensor_transaction(
             transaction_signer=transaction_signer,
             batch_signer=self._batch_signer,
+            user_quota_usage_value=user_quota_usage_value,
             latitude=latitude,
             longitude=longitude,
             measurement=0,

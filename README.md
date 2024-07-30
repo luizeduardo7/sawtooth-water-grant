@@ -1,51 +1,39 @@
 # Sawtooth Water Grant
 
-Sawtooth Water Grant is a basic example of a distributed supply-chain
-application. It provides asset transfer with location tracking, which allows
-users to transfer assets and track them as they move through a supply chain.
+Sawtooth Water Grant é um protótipo funcional de uma aplicação distribuída de gestão de outorgas de recursos hídricos. Proporciona o cadastro de sensores com funcionalidade IoT, permitindo que os outorgados enviem automaticamente seus dados de consumo à Agência Nacional de Águas (ANA). Esses dados são validados por meio de contratos inteligentes e registrados em blockchain.
 
-Sawtooth Water Grant is built on Hyperledger Sawtooth, an enterprise
-blockchain platform. To learn more about Hyperledger Sawtooth, see the
-[sawtooth-core repository](https://github.com/hyperledger/sawtooth-core) and the
-[Hyperledger Sawtooth documentation](https://sawtooth.hyperledger.org/docs/).
+Sawtooth Water Grant é construído sobre o Hyperledger Sawtooth, uma plataforma de blockchain empresarial inicialmente criada pela Hyperledger Foundation e Intel, e hoje mantida pela Splinter. Para saber mais sobre o Hyperledger Sawtooth, consulte o [repositório sawtooth-core](https://github.com/splintercommunity/sawtooth-core) e a [documentação do Hyperledger Sawtooth](https://sawtooth.splinter.dev/docs/1.2/)
 
-The Water Grant components in this repository include:
+Os componentes do Water Grant neste repositório incluem:
 
-- A transaction processor that handles the Water Grant transaction logic
+  - Um transaction processor que lida com a lógica de transações do Water Grant
 
-- A custom REST API that provides HTTP/JSON endpoints for querying blockchain
-  data, creates batches and transactions, and manages user information
+  - Uma API REST personalizada que fornece endpoints HTTP/JSON para consultar dados da blockchain, criar batches e transações, e gerenciar informações de usuários
 
-- An event subscriber that parses blockchain events and stores data in a local,
-  off-chain reporting database
+  - Um event subscriber que interpreta eventos da blockchain e armazena dados em um banco de dados auxiliar fora da blockchain
 
-- A simple client web app, Sprinkle, that uses Water Grant to track artwork
-  loans between museums, galleries, and private owners
+  - Dois aplicativos web cliente: Sprinkle App, que usa o Water Grant para rastrear o consumo por outorgado e gerenciar cadastros na rede, e o Audit App, que decodifica registros da blockchain para eventuais auditorias.
 
-## Usage
+## Uso
 
 
-Clone the Water Grant repository, then make sure that you have the `docker`
-and `docker-compose` commands installed on your machine.
+Clone o repositório do Water Grant e certifique-se de que os comandos `docker` e `docker-compose` estão instalados na sua máquina.
 
-To run the application, navigate to the project's root directory, then use
-this command:
+Para executar a aplicação, navegue até o diretório raiz do projeto e use o seguinte comando:
 
 ```bash
 docker-compose up
 ```
+ou
+```bash
+docker compose up
+```
 
-This command starts all Water Grant components in separate containers.
+Este comando inicia todos os componentes do Water Grant em contêineres separados.
 
-The available HTTP endpoints are:
-- Client: **http://localhost:8040**
+Os endpoints HTTP disponíveis são:
+- Sprinkle App: **http://localhost:8040**
+- Audit App: **http://localhost:5000**
 - Water Grant REST API: **http://localhost:8000**
 - PostgreSQL Adminer: **http://localhost:8080**
 - Sawtooth REST API: **http://localhost:8008**
-
-## License
-
-The Sawtooth Water Grant software and course material in the
-[course_modules](course_modules) subdirectory is licensed under a
-Creative Commons Attribution 4.0 International License.  You may obtain a copy
-of the license at: http://creativecommons.org/licenses/by/4.0/.

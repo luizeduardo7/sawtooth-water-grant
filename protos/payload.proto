@@ -65,6 +65,9 @@ message CreateSensorAction {
 
     // Initial measurement of the sensor
     double measurement = 4;
+
+    // Actual quota usage of the user
+    double user_quota_usage_value = 5;
 }
 
 

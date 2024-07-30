@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Auditoria Blockchain</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            flex: 1;
+            padding-bottom: 60px; /* altura do rodapé */
+        }
+        .loading-spinner {
+            display: none;
+            margin: 20px auto;
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #3498db;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-container {
+            margin-top: 20px;
+        }
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #007bff;
+            text-align: center;
+            padding: 10px 0;
+        }
+        .footer img {
+            height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4 text-center">Auditoria Blockchain Outorga ANA</h1>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-primary mx-2" onclick="fetchData('blocks')">Blocos</button>
+            <button class="btn btn-primary mx-2" onclick="fetchData('state')">State</button>
+            <button class="btn btn-primary mx-2" onclick="fetchData('transactions')">Transações</button>
+            <button class="btn btn-primary mx-2" onclick="fetchData('batches')">Batches</button>
+        </div>
+        <div class="d-flex justify-content-center mt-3">
+            <input type="text" id="transactionId" class="form-control mx-2" placeholder="ID da Transação">
+            <button class="btn btn-secondary" onclick="fetchTransactionById()">Transação por ID</button>
+        </div>
+        <div class="d-flex justify-content-center mt-3">
+            <input type="text" id="publicKey" class="form-control mx-2" placeholder="Chave Pública">
+            <button class="btn btn-secondary" onclick="searchTransactionsByPublicKey()">Buscar Transações por Chave Pública</button>
+        </div>
+        <div class="d-flex justify-content-center mt-3">
+            <input type="text" id="name" class="form-control mx-2" placeholder="Nome">
+            <button class="btn btn-secondary" onclick="searchTransactionsByName()">Buscar Transações por Nome</button>
+        </div>
+        <div class="loading-spinner" id="loading-spinner"></div>
+        <pre id="result" class="result-container bg-light p-3 border rounded"></pre>
+    </div>
+
+    <div class="footer">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    </div>
+
+    <script>
+        function showLoadingSpinner() {
+            document.getElementById('loading-spinner').style.display = 'block';
+        }
+
+        function hideLoadingSpinner() {
+            document.getElementById('loading-spinner').style.display = 'none';
+        }
+
+        function fetchData(endpoint) {
+            showLoadingSpinner();
+            fetch(`/${endpoint}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                    hideLoadingSpinner();
+                })
+                .catch(error => {
+                    document.getElementById('result').textContent = `Error: ${error}`;
+                    hideLoadingSpinner();
+                });
+        }
+
+        function fetchTransactionById() {
+            const transactionId = document.getElementById('transactionId').value;
+            if (!transactionId) {
+                alert('Por favor, insira o ID da transação.');
+                return;
+            }
+            showLoadingSpinner();
+            fetch(`/transactions/${transactionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                    hideLoadingSpinner();
+                })
+                .catch(error => {
+                    document.getElementById('result').textContent = `Error: ${error}`;
+                    hideLoadingSpinner();
+                });
+        }
+
+        function searchTransactionsByPublicKey() {
+            const publicKey = document.getElementById('publicKey').value;
+            if (!publicKey) {
+                alert('Por favor, insira a chave pública.');
+                return;
+            }
+            showLoadingSpinner();
+            fetch(`/transactions/search/by-public-key?public_key=${publicKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                    hideLoadingSpinner();
+                })
+                .catch(error => {
+                    document.getElementById('result').textContent = `Error: ${error}`;
+                    hideLoadingSpinner();
+                });
+        }
+
+        function searchTransactionsByName() {
+            const name = document.getElementById('name').value;
+            if (!name) {
+                alert('Por favor, insira o nome.');
+                return;
+            }
+            showLoadingSpinner();
+            fetch(`/transactions/search/by-name?name=${name}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                    hideLoadingSpinner();
+                })
+                .catch(error => {
+                    document.getElementById('result').textContent = `Error: ${error}`;
+                    hideLoadingSpinner();
+                });
+        }
+    </script>
+</body>
+</html>

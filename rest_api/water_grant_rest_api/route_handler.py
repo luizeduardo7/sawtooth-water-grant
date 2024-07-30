@@ -121,8 +121,6 @@ class RouteHandler(object):
         # Valida se há permissão de admin
         admin_public_key = body.get('created_by_admin_public_key')
         await self._validate_admin(admin_public_key)
-        
-        public_key, private_key = self._messenger.get_new_key_pair()
 
         username = body.get('username')
         user_auth_info = await self._database.fetch_auth_resource(username)
@@ -130,6 +128,8 @@ class RouteHandler(object):
             raise ApiUnauthorized(
                 'Já existe um usuário com esse username.'
                 'Por favor, insira outro.')
+        
+        public_key, private_key = self._messenger.get_new_key_pair()        
         
         encrypted_private_key = encrypt_private_key(
             request.app['aes_key'], public_key, private_key)
@@ -155,10 +155,7 @@ class RouteHandler(object):
             raise ApiUnauthorized(
                 'Transação invalida')
 
-        token = generate_auth_token(
-            request.app['secret_key'], public_key)
-
-        return json_response({'authorization': token})
+        return json_response({'data': 'Create user transaction submitted'})
     
 
     async def list_users(self, _request):
@@ -239,13 +236,13 @@ class RouteHandler(object):
 
         await self._messenger.send_create_sensor_transaction(
             private_key=private_key,
+            user_quota_usage_value=user_quota_usage_value,
             latitude=body.get('latitude'),
             longitude=body.get('longitude'),
             sensor_id=body.get('sensor_id'),
             timestamp=get_time())
 
-        return json_response(
-            {'data': 'Create sensor transaction submitted'})
+        return json_response({'data': 'Create sensor transaction submitted'})
     
 
     async def list_sensors(self, _request):
@@ -312,7 +309,7 @@ class RouteHandler(object):
         # Verifica se é há um chave de admin válida
         admin_auth = await self._database.fetch_auth_resource(public_key)
         if admin_auth is None:
-            raise ApiUnauthorized('Token não está associado com um usuário.')
+            raise ApiUnauthorized('Token não está associado com uma conta.')
 
         # Verifica se trata da operação de atualização de usuário
         if body.get('user_public_key'):
