@@ -182,4 +182,3 @@ services:
       - rest-api
     environment:
       - FLASK_ENV=development
-    
