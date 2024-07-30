@@ -155,10 +155,7 @@ class RouteHandler(object):
             raise ApiUnauthorized(
                 'Transação invalida')
 
-        token = generate_auth_token(
-            request.app['secret_key'], public_key)
-
-        return json_response({'authorization': token})
+        return json_response({'data': 'Create user transaction submitted'})
     
 
     async def list_users(self, _request):
@@ -245,8 +242,7 @@ class RouteHandler(object):
             sensor_id=body.get('sensor_id'),
             timestamp=get_time())
 
-        return json_response(
-            {'data': 'Create sensor transaction submitted'})
+        return json_response({'data': 'Create sensor transaction submitted'})
     
 
     async def list_sensors(self, _request):
@@ -313,7 +309,7 @@ class RouteHandler(object):
         # Verifica se é há um chave de admin válida
         admin_auth = await self._database.fetch_auth_resource(public_key)
         if admin_auth is None:
-            raise ApiUnauthorized('Token não está associado com um usuário.')
+            raise ApiUnauthorized('Token não está associado com uma conta.')
 
         # Verifica se trata da operação de atualização de usuário
         if body.get('user_public_key'):

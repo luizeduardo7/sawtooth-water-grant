@@ -141,7 +141,7 @@ def _create_sensor(state, public_key, payload):
         raise InvalidTransaction('No sensor ID provided')
 
     if state.get_sensor(payload.data.sensor_id):
-        raise InvalidTransaction('Identifier {} belongs to an existing '
+        raise InvalidTransaction('ID {} belongs to an existing '
                                  'sensor'.format(payload.data.sensor_id))
     
     if payload.data.user_quota_usage_value > state.get_user(public_key).quota:
