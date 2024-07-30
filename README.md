@@ -1,6 +1,6 @@
 # Sawtooth Water Grant
 
-Sawtooth Water Grant é um protótipo funcional de uma aplicação distribuída de gestão de outorgas de recursos hídricos. Provem o cadastro de sensores com funcionalidade IoT, que permitem que outorgados enviam automaticamente seus dados de consumo à Agência Nacional de Águas (ANA). 
+Sawtooth Water Grant é um protótipo funcional de uma aplicação distribuída de gestão de outorgas de recursos hídricos. Proporciona o cadastro de sensores com funcionalidade IoT, permitindo que os outorgados enviem automaticamente seus dados de consumo à Agência Nacional de Águas (ANA). Esses dados são validados por meio de contratos inteligentes e registrados em blockchain.
 
 Sawtooth Water Grant é construído sobre o Hyperledger Sawtooth, uma plataforma de blockchain empresarial inicialmente criada pela Hyperledger Foundation e Intel, e hoje mantida pela Splinter. Para saber mais sobre o Hyperledger Sawtooth, consulte o [repositório sawtooth-core](https://github.com/splintercommunity/sawtooth-core) e a [documentação do Hyperledger Sawtooth](https://sawtooth.splinter.dev/docs/1.2/)
 
