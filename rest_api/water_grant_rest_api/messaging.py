@@ -168,7 +168,7 @@ class Messenger(object):
         elif status == client_batch_submit_pb2.ClientBatchStatus.PENDING:
             raise ApiInternalError('Transaction submitted but timed out')
         elif status == client_batch_submit_pb2.ClientBatchStatus.UNKNOWN:
-            raise ApiInternalError('Something went wrong. Try again later')
+            print('ClientBatchStatus.UNKNOWN. Check later')
 
 
     # Transferência de sensores desativada.
