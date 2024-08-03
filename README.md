@@ -33,6 +33,7 @@ Este comando inicia todos os componentes do Water Grant em contêineres separado
 
 Os endpoints HTTP disponíveis são:
 - Sprinkle App: **http://localhost:8040**
+  - Use os dados de login em [credentials.txt](credentials.txt) para primeiro acesso.
 - Audit App: **http://localhost:5000**
 - Water Grant REST API: **http://localhost:8000**
 - PostgreSQL Adminer: **http://localhost:8080**

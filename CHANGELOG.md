@@ -7,6 +7,13 @@ All changes to the Sawtooth Water Grant project are recorded here. Changes must 
 
 Thanks for contributing.
 
+## [0.5]
+
+### Added
+
+- Audit App
+- crendentials.txt
+
 ## [0.46]
 
 ### Added
