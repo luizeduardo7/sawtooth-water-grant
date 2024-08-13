@@ -40,6 +40,7 @@ def make_key():
 
 REST_URL = 'rest-api:8008'
 BATCH_KEY = make_key()
+TEST_ADMIN_KEY = '038713b42df2e514aa654495ecda8a8f9a6cd75760e99df2ff6f02dccb46446c81'
 LOGGER = logging.getLogger(__name__)
 
 
@@ -61,251 +62,280 @@ class WaterGrantTest(unittest.TestCase):
                 - The timestamp must be less than the current time
         """
         self.assertEqual(
-            self.client.create_agent(
+            self.client.create_user(
                 key=self.signer1,
                 name='alice',
-                timestamp=sys.maxsize)[0]['status'],
+                timestamp=sys.maxsize,
+                quota=0,
+                admin_public_key=TEST_ADMIN_KEY)[0]['status'],
             "INVALID",
             "Invalid timestamp")
 
-    def test_01_create_agent(self):
-        """ Tests the CreateAgentAction validation rules.
+    def test_01_create_user(self):
+        """ Tests the CreateUserAction validation rules.
 
         Notes:
-            CreateAgentAction validation rules:
+            CreateUserAction validation rules:
                 - The public_key must be unique for all accounts
         """
 
         self.assertEqual(
-            self.client.create_agent(
+            self.client.create_user(
                 key=self.signer1,
                 name='alice',
-                timestamp=1)[0]['status'],
+                timestamp=1,
+                quota=0,
+                admin_public_key=TEST_ADMIN_KEY)[0]['status'],
             "COMMITTED")
 
         self.assertEqual(
-            self.client.create_agent(
+            self.client.create_user(
                 key=self.signer1,
                 name='alice',
-                timestamp=2)[0]['status'],
+                timestamp=2,
+                quota=0,
+                admin_public_key=TEST_ADMIN_KEY)[0]['status'],
             "INVALID",
-            "Account with the public key {} already exists".format(
+            "User with the public key {} already exists".format(
                 self.signer1.get_public_key().as_hex()))
 
         self.assertEqual(
-            self.client.create_agent(
+            self.client.create_user(
                 key=self.signer2,
                 name='alice',
-                timestamp=1)[0]['status'],
+                timestamp=1,
+                quota=0,
+                admin_public_key=TEST_ADMIN_KEY)[0]['status'],
             "COMMITTED")
 
-    def test_02_create_record(self):
-        """ Tests the CreateRecordAction validation rules.
+    def test_02_create_sensor(self):
+        """ Tests the CreateSensorAction validation rules.
 
         Notes:
-            CreateRecordAction validation rules:
-                - Signer is registered as an agent
-                - record_id is not empty
-                - record_id does not belong to an existing record
+            CreateSensorAction validation rules:
+                - Signer is registered as an user
+                - sensor_id is not empty
+                - sensor_id does not belong to an existing sensor
                 - Latitude and longitude are valid
         """
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.bad_signer,
+                user_quota_usage_value=0,
                 latitude=0,
                 longitude=0,
-                record_id='bar',
+                measurement=0,
+                sensor_id='1',
                 timestamp=1)[0]['status'],
             "INVALID",
-            "Agent with the public key {} does not exist".format(
+            "User with the public key {} does not exist".format(
                 self.bad_signer.get_public_key().as_hex()))
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=0,
                 longitude=0,
-                record_id='',
+                measurement=0,
+                sensor_id='',
                 timestamp=2)[0]['status'],
             "INVALID",
-            "No record ID provided")
+            "No sensor ID provided")
 
-        record_id_foo = 'foo'
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=0,
                 longitude=0,
-                record_id='foo',
+                measurement=0,
+                sensor_id='foo',
                 timestamp=3)[0]['status'],
             "COMMITTED")
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=0,
                 longitude=0,
-                record_id='foo',
+                measurement=0,
+                sensor_id='foo',
                 timestamp=4)[0]['status'],
             "INVALID",
-            "Identifier 'foo' belongs to an existing record")
+            "Identifier 'foo' belongs to an existing sensor")
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=-91000000,
                 longitude=0,
-                record_id='badlat1',
+                measurement=0,
+                sensor_id='badlat1',
                 timestamp=5)[0]['status'],
             "INVALID",
             "Latitude must be between -90 and 90. Got -91")
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=91000000,
                 longitude=0,
-                record_id='badlat2',
+                measurement=0,
+                sensor_id='badlat2',
                 timestamp=6)[0]['status'],
             "INVALID",
             "Latitude must be between -90 and 90. Got 91")
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=0,
                 longitude=-181000000,
-                record_id='badlong1',
+                measurement=0,
+                sensor_id='badlong1',
                 timestamp=7)[0]['status'],
             "INVALID",
             "Longitude must be between -180 and 180. Got -181")
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
+                user_quota_usage_value=0,
                 latitude=0,
                 longitude=181000000,
-                record_id='badlong2',
+                measurement=0,
+                sensor_id='badlong2',
                 timestamp=8)[0]['status'],
             "INVALID",
             "Longitude must be between -180 and 180. Got 181")
 
-    def test_03_transfer_record(self):
-        self.client.create_record(
-                key=self.signer1,
-                latitude=0,
-                longitude=0,
-                record_id='transfer1',
-                timestamp=1)
 
-        self.client.create_record(
-                key=self.signer1,
-                latitude=0,
-                longitude=0,
-                record_id='transfer2',
-                timestamp=2)
-
-        self.assertEqual(
-            self.client.transfer_record(
-                key=self.signer1,
-                receiving_agent=self.signer2.get_public_key().as_hex(),
-                record_id='transfer1',
-                timestamp=3)[0]['status'],
-                "COMMITTED")
-
-        self.assertEqual(
-            self.client.transfer_record(
-                key=self.signer1,
-                receiving_agent=self.bad_signer.get_public_key().as_hex(),
-                record_id='transfer2',
-                timestamp=4)[0]['status'],
-                "INVALID",
-                "Agent with the public key {} does not exist".format(
-                self.bad_signer.get_public_key().as_hex()))
-
-        self.assertEqual(
-            self.client.transfer_record(
-                key=self.signer1,
-                receiving_agent=self.signer2.get_public_key().as_hex(),
-                record_id='doesntexist',
-                timestamp=5)[0]['status'],
-                "INVALID",
-                "Record with the record id doesntexist does not exist")
-
-        self.assertEqual(
-            self.client.transfer_record(
-                key=self.signer1,
-                receiving_agent=self.signer2.get_public_key().as_hex(),
-                record_id='transfer1',
-                timestamp=6)[0]['status'],
-                "INVALID",
-                "Transaction signer is not the owner of the record")
-
-    def test_04_update_record(self):
-        self.client.create_record(
+    def test_03_update_sensor(self):
+        self.client.create_sensor(
             key=self.signer1,
+            user_quota_usage_value=0,
             latitude=0,
             longitude=0,
-            record_id='update1',
+            sensor_id='update1',
             timestamp=0)
 
         self.assertEqual(
-            self.client.update_record(
+            self.client.update_sensor(
                 key=self.signer1,
                 latitude=90000000,
                 longitude=180000000,
-                record_id='update1',
+                sensor_id='update1',
                 timestamp=1)[0]['status'],
             "COMMITTED")
 
         self.assertEqual(
-            self.client.update_record(
+            self.client.update_sensor(
                 key=self.signer1,
                 latitude=0,
                 longitude=0,
-                record_id='notarecord',
+                sensor_id='notasensor',
                 timestamp=2)[0]['status'],
             "INVALID",
-            "Record with the record id notarecord does not exist")
+            "Sensor with the sensor id notasensor does not exist")
 
         self.assertEqual(
-            self.client.update_record(
+            self.client.update_sensor(
                 key=self.signer2,
                 latitude=90000000,
                 longitude=180000000,
-                record_id='update1',
+                sensor_id='update1',
                 timestamp=3)[0]['status'],
             "INVALID",
-            "Transaction signer is not the owner of the record")
+            "Transaction signer is not the owner of the sensor")
 
         self.assertEqual(
-            self.client.update_record(
+            self.client.update_sensor(
                 key=self.signer1,
                 latitude=90000001,
                 longitude=180000000,
-                record_id='update1',
+                sensor_id='update1',
                 timestamp=4)[0]['status'],
             "INVALID",
             "Latitude must be between -90 and 90. Got 91")
 
         self.assertEqual(
-            self.client.create_record(
+            self.client.create_sensor(
                 key=self.signer1,
                 latitude=0,
                 longitude=-181000000,
-                record_id='update1',
+                sensor_id='update1',
                 timestamp=5)[0]['status'],
             "INVALID",
             "Longitude must be between -180 and 180. Got -181")
 
+        # def test_transfer_sensor(self):
+        #     self.client.create_sensor(
+        #             key=self.signer1,
+        #             user_quota_usage_value=0,
+        #             latitude=0,
+        #             longitude=0,
+        #             measurement=0,
+        #             sensor_id='transfer1',
+        #             timestamp=1)
+
+        #     self.client.create_sensor(
+        #             key=self.signer1,
+        #             user_quota_usage_value=0,
+        #             latitude=0,
+        #             longitude=0,
+        #             measurement=0,
+        #             sensor_id='transfer2',
+        #             timestamp=2)
+
+        #     self.assertEqual(
+        #         self.client.transfer_sensor(
+        #             key=self.signer1,
+        #             receiving_user=self.signer2.get_public_key().as_hex(),
+        #             sensor_id='transfer1',
+        #             timestamp=3)[0]['status'],
+        #             "COMMITTED")
+
+        #     self.assertEqual(
+        #         self.client.transfer_sensor(
+        #             key=self.signer1,
+        #             receiving_user=self.bad_signer.get_public_key().as_hex(),
+        #             sensor_id='transfer2',
+        #             timestamp=4)[0]['status'],
+        #             "INVALID",
+        #             "User with the public key {} does not exist".format(
+        #             self.bad_signer.get_public_key().as_hex()))
+
+        #     self.assertEqual(
+        #         self.client.transfer_sensor(
+        #             key=self.signer1,
+        #             receiving_user=self.signer2.get_public_key().as_hex(),
+        #             sensor_id='doesntexist',
+        #             timestamp=5)[0]['status'],
+        #             "INVALID",
+        #             "Sensor with the sensor id doesntexist does not exist")
+
+        #     self.assertEqual(
+        #         self.client.transfer_sensor(
+        #             key=self.signer1,
+        #             receiving_user=self.signer2.get_public_key().as_hex(),
+        #             sensor_id='transfer1',
+        #             timestamp=6)[0]['status'],
+        #             "INVALID",
+        #             "Transaction signer is not the owner of the sensor")
+        
 class WaterGrantClient(object):
 
     def __init__(self, url):
         self._client = RestClient(base_url="http://{}".format(url))
 
-    def create_agent(self, key, name, timestamp):
-        batch = transaction_creation.make_create_agent_transaction(
+    def create_admin(self, key, name, timestamp):
+        batch = transaction_creation.make_create_admin_transaction(
             transaction_signer=key,
             batch_signer=BATCH_KEY,
             name=name,
@@ -315,13 +345,48 @@ class WaterGrantClient(object):
         self._client.send_batches(batch_list)
         return self._client.get_statuses([batch_id], wait=10)
 
-    def create_record(self, key, latitude, longitude, record_id, timestamp):
-        batch = transaction_creation.make_create_record_transaction(
+    def create_user(self, key, name, timestamp,  quota, admin_public_key):
+        batch = transaction_creation.make_create_user_transaction(
             transaction_signer=key,
             batch_signer=BATCH_KEY,
+            name=name,
+            timestamp=timestamp,
+            quota=quota,
+            admin_public_key=admin_public_key)
+        batch_id = batch.header_signature
+        batch_list = batch_pb2.BatchList(batches=[batch])
+        self._client.send_batches(batch_list)
+        return self._client.get_statuses([batch_id], wait=10)
+    
+    def update_user(self, key, quota, user_public_key, timestamp, admin_public_key):
+        batch = transaction_creation.make_update_user_transaction(
+            transaction_signer=key,
+            batch_signer=BATCH_KEY,
+            quota=quota,
+            user_public_key=user_public_key,
+            timestamp=timestamp,
+            admin_public_key=admin_public_key)
+        batch_id = batch.header_signature
+        batch_list = batch_pb2.BatchList(batches=[batch])
+        self._client.send_batches(batch_list)
+        return self._client.get_statuses([batch_id], wait=10)
+
+    def create_sensor(self,
+                     key,
+                     user_quota_usage_value,
+                     latitude,
+                     longitude,
+                     measurement,
+                     sensor_id,
+                     timestamp):
+        batch = transaction_creation.make_sensor_sensor_transaction(
+            transaction_signer=key,
+            batch_signer=BATCH_KEY,
+            user_quota_usage_value=user_quota_usage_value,
             latitude=latitude,
             longitude=longitude,
-            record_id=record_id,
+            measurement=measurement,
+            sensor_id=sensor_id,
             timestamp=timestamp)
         batch_id = batch.header_signature
         batch_list = batch_pb2.BatchList(batches=[batch])
@@ -329,25 +394,24 @@ class WaterGrantClient(object):
         return self._client.get_statuses([batch_id], wait=10)
 
     # Transferência de sensores desativada.
-    # def transfer_record(self, key, receiving_agent, record_id, timestamp):
-    #     batch = transaction_creation.make_transfer_record_transaction(
+    # def transfer_sensor(self, key, receiving_user, sensor_id, timestamp):
+    #     batch = transaction_creation.make_transfer_sensor_transaction(
     #         transaction_signer=key,
     #         batch_signer=BATCH_KEY,
-    #         receiving_agent=receiving_agent,
-    #         record_id=record_id,
+    #         receiving_user=receiving_user,
+    #         sensor_id=sensor_id,
     #         timestamp=timestamp)
     #     batch_id = batch.header_signature
     #     batch_list = batch_pb2.BatchList(batches=[batch])
     #     self._client.send_batches(batch_list)
     #     return self._client.get_statuses([batch_id], wait=10)
 
-    def update_record(self, key, latitude, longitude, record_id, timestamp):
-        batch = transaction_creation.make_update_record_transaction(
+    def update_sensor(self, key, measurement, sensor_id, timestamp):
+        batch = transaction_creation.make_update_sensor_transaction(
             transaction_signer=key,
             batch_signer=BATCH_KEY,
-            latitude=latitude,
-            longitude=longitude,
-            record_id=record_id,
+            measurement=measurement,
+            sensor_id=sensor_id,
             timestamp=timestamp)
         batch_id = batch.header_signature
         batch_list = batch_pb2.BatchList(batches=[batch])

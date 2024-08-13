@@ -155,7 +155,10 @@ class RouteHandler(object):
             raise ApiUnauthorized(
                 'Transação invalida')
 
-        return json_response({'data': 'Create user transaction submitted'})
+        token = generate_auth_token(
+            request.app['secret_key'], public_key)
+
+        return json_response({'authorization': token})
     
 
     async def list_users(self, _request):

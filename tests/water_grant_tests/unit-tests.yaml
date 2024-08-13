@@ -19,12 +19,12 @@ services:
 
   water-grant-shell:
     build:
-      context: ../..
+      context: .
       dockerfile: ./shell/Dockerfile
     image: sawtooth-water-grant-shell
-    container_name: water-grant-shell-test
+    container_name: water-grant-shell
     volumes:
-      - ../..:/project/sawtooth-water-grant
+      - .:/project/sawtooth-water-grant
     command: |
       bash -c "
         water-grant-protogen
@@ -33,12 +33,12 @@ services:
 
   water-grant-tp:
     build:
-        context: ../..
+        context: .
         dockerfile: ./processor/Dockerfile
     image: sawtooth-water-grant-tp
-    container_name: water-grant-tp-test
+    container_name: water-grant-tp
     volumes:
-      - '../..:/project/sawtooth-water-grant'
+      - '.:/project/sawtooth-water-grant'
     command: |
       bash -c "
         sleep 1
@@ -46,37 +46,38 @@ services:
       "
 
   settings-tp:
-    image: hyperledger/sawtooth-settings-tp:1.0
+    image: hyperledger/sawtooth-settings-tp:1.2
     depends_on:
       - validator
-    command: settings-tp --connect tcp://validator:4004
+    entrypoint: settings-tp -vv -C tcp://validator:4004
 
   validator:
-    image: hyperledger/sawtooth-validator:1.0
+    image: hyperledger/sawtooth-validator:1.2
     expose:
       - 4004
-    command: |
-      bash -c "
-        sawadm keygen &&
-        sawtooth keygen my_key &&
-        sawset genesis -k /root/.sawtooth/keys/my_key.priv &&
-        sawadm genesis config-genesis.batch &&
+    entrypoint: "bash -c \"\
+        sawadm keygen && \
+        sawtooth keygen my_key && \
+        sawset genesis -k /root/.sawtooth/keys/my_key.priv && \
+        sawadm genesis config-genesis.batch config.batch && \
         sawtooth-validator -vv \
           --endpoint tcp://validator:8800 \
           --bind component:tcp://eth0:4004 \
-          --bind network:tcp://eth0:8800
-      "
+          --bind network:tcp://eth0:8800 \
+        \""
+
 
   rest-api:
-    image: hyperledger/sawtooth-rest-api:1.0
-    entrypoint: sawtooth-rest-api --connect tcp://validator:4004 --bind rest-api:8008
+    image: hyperledger/sawtooth-rest-api:1.2
+    entrypoint: sawtooth-rest-api -C tcp://validator:4004 --bind rest-api:8008
+
 
   unit-tests:
     build:
-      context: ../..
-      dockerfile: ./shell/Dockerfile
+      context: ../../
+      dockerfile: shell/Dockerfile
     volumes:
-      - ../..:/project/sawtooth-water-grant
+      - '../../:/project/sawtooth-water-grant'
     environment:
       PYTHONPATH: /project/sawtooth-water-grant/rest_api:/project/sawtooth-water-grant/addressing:/project/sawtooth-water-grant/protobuf
     command: |
@@ -84,3 +85,4 @@ services:
         cd tests/water_grant_tests
         python3 -m nose2 -v unit_tests
       "
+

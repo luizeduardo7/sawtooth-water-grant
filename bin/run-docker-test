@@ -59,7 +59,8 @@ def main():
 
     # Construct commands
     compose = [
-        'docker-compose',
+        'docker',
+        'compose',
         '-p', isolation_id,
         '-f', compose_file
     ]
@@ -224,7 +225,7 @@ def load_compose_file(compose_file):
     try:
         with open(compose_file) as fd:
             contents = fd.read()
-        compose = yaml.load(contents)
+        compose = yaml.load(contents, Loader=yaml.SafeLoader)
         return compose
 
     except OSError:
