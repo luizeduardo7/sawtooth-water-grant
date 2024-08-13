@@ -7,6 +7,12 @@ All changes to the Sawtooth Water Grant project are recorded here. Changes must 
 
 Thanks for contributing.
 
+## [0.55]
+
+### Added
+
+- Representation of water consumption on user profile page
+
 ## [0.5]
 
 ### Added
