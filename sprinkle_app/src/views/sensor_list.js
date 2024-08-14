@@ -23,50 +23,68 @@ const Table = require('../components/tables.js')
 const api = require('../services/api.js')
 
 const SensorList = {
-  oninit (vnode) {
-    vnode.state.sensors = []
+  oninit(vnode) {
+    vnode.state.sensors = [];
     if (api.getIsAdmin()) {
       api.get('sensors').then((sensors) => {
-        vnode.state.sensors = sortBy(sensors, 'sensor_id')
-      })
+        vnode.state.sensors = sortBy(sensors, 'sensor_id');
+      });
     } else {
-      const user_public_key = api.getPublicKey()
+      const user_public_key = api.getPublicKey();
       api.get(`/sensors/owner/${user_public_key}`).then((sensors) => {
-        vnode.state.sensors = sortBy(sensors, 'sensor_id')
-      })
+        vnode.state.sensors = sortBy(sensors, 'sensor_id');
+      });
     }
   },
 
-  view (vnode) {
+  view(vnode) {
+    const isAdmin = api.getIsAdmin();
+
     return [
       m('.sensor-list',
         m('input[type=text]', {
-          placeholder: 'Procurar por ID',
+          placeholder: isAdmin ? 'Procurar por ID ou Chave' : 'Procurar por ID',
           oninput: (e) => {
-            const searchId = e.target.value
+            const searchQuery = e.target.value.toLowerCase();
             api.get('sensors').then((sensors) => {
               vnode.state.sensors = sortBy(
-                sensors.filter(
-                  sensor => sensor.sensor_id.includes(searchId)),
-                  'sensor_id')
-            })
+                sensors.filter(sensor => {
+                  if (isAdmin) {
+                    const owners = sensor.owners || [];
+                    const sensorIdMatch = sensor.sensor_id.toLowerCase().includes(searchQuery);
+                    const ownerPublicKeyMatch = owners.length > 0 && 
+                                                owners[0].user_public_key.toLowerCase().includes(searchQuery);
+                    return sensorIdMatch || ownerPublicKeyMatch;
+                  } else {
+                    return sensor.sensor_id.toLowerCase().includes(searchQuery);
+                  }
+                }),
+                'sensor_id'
+              );
+            });
           }
         }),
         m(Table, {
-          headers: [
-            'ID'
-          ],
-          rows: vnode.state.sensors
-            .map((sensor) => [
-              m(`a[href=/sensors/${sensor.sensor_id}]`,
-                { oncreate: m.route.link },
-                sensor.sensor_id)
-            ]),
+          headers: isAdmin ? ['ID', 'Proprietário (Chave Pública)'] : ['ID'],
+          rows: vnode.state.sensors.map(sensor => {
+            if (isAdmin) {
+              const owners = sensor.owners || [];
+              const ownerPublicKey = owners.length > 0 ? owners[0].user_public_key : 'N/A';
+              return [
+                m(`a[href=/sensors/${sensor.sensor_id}]`, { oncreate: m.route.link }, sensor.sensor_id),
+                ownerPublicKey
+              ];
+            } else {
+              return [
+                m(`a[href=/sensors/${sensor.sensor_id}]`, { oncreate: m.route.link }, sensor.sensor_id)
+              ];
+            }
+          }),
           noRowsText: 'Sem sensores encontrados'
         })
       )
-    ]
+    ];
   }
-}
+};
 
-module.exports = SensorList
+module.exports = SensorList;
