@@ -5,8 +5,10 @@ import json
 import random
 import pandas as pd
 from faker import Faker
+import time
 
 fake = Faker("pt_BR")
+MAC_ADDRESSES = []
 base_url = "http://localhost:8000"
 FLOAT_PRECISION = 1000000
 
@@ -82,6 +84,27 @@ def make_request_create_sensor(user_bearer_token, sensor_id, lat, long):
     
     return headers, data
 
+def make_request_update_sensor(user_bearer_token, measurement):
+    headers = make_header(user_bearer_token)
+    
+    data = {
+        "measurement": measurement,
+    }
+    
+    return headers, data
+
+def divide_outflow_into_parts(outflow, parts):
+    
+    measurements = []
+    for _ in range(parts - 1):
+        part = random.uniform(1, outflow - sum(measurements) - (parts - len(measurements) - 1))
+        measurements.append(part)
+    
+    measurements.append(outflow - sum(measurements))
+    
+    return measurements
+
+
 def make_request_update_user_quota(user_bearer_token, admin_bearer_token, quota):
     headers = make_header(user_bearer_token)
 
@@ -145,20 +168,21 @@ def main():
     # Leitura do arquivo CSV
     df = pd.read_csv("outorgas_ANA_10_amostras.csv")
 
-    # ID icremental para sensores
-    sensor_id = 1
-
     # Iteração sobre as linhas do arquivo CSV
     for index, row in df.iterrows():
         name = row['Nome_do_Requerente']
         latitude = row['Latitude'].replace(',','.')
         longitude = row['Longitude'].replace(',','.')
-        monthly_quota = int(row['VolumeAnual_mÂ³']/12)  
+        monthly_quota = int(row['VolumeAnual_mÂ³']/12)
+        outflow = float(row['Vazão_1__m³/h'])
+        parts = 2*(int(row['Horas_dia1'])) # 2 medições por hora
 
         print(f"Linha {index}:")
         print(f"  Nome do Requerente: {name}")
         print(f"  Localização: {latitude}, {longitude}")
         print(f"  Volume Anual: {monthly_quota} m³")
+        print(f"  Vazão: {outflow} m³/h")
+        print(f"  Horas por dia: {parts}")
 
         response = make_request(create_user_url, 
                                 make_request_create_user(name, admin_token))
@@ -166,6 +190,7 @@ def main():
         user_token = response.json()['authorization']
 
         # ------ Atualização de quota de usuário ------
+
         update_user_url = base_url + "/users/" + get_public_key(user_token) +"/update"
         make_request(update_user_url,
                     make_request_update_user_quota(user_token,
@@ -173,18 +198,31 @@ def main():
                                                     monthly_quota))
         
         # ------ Criação de sensor ------
+
+        time.sleep(1)
+
+        sensor_id = fake.mac_address()
+        while sensor_id in MAC_ADDRESSES:
+            sensor_id = fake.mac_address()
+        
+        MAC_ADDRESSES.append(sensor_id)
+
         make_request(create_sensor_url, 
                     make_request_create_sensor(user_token,
                                                 sensor_id,
                                                 latitude,
                                                 longitude))
         
+        time.sleep(1)
+        
         # ------ Atualização de sensor ------
-        # update_sensor_url = base_url + "/sensors/" + str(sensor_id) + "/update"
+        update_sensor_url = base_url + "/sensors/" + str(sensor_id) + "/update"
 
+        measurements = divide_outflow_into_parts(outflow, parts)
 
-        # Incrementa o ID do sensor
-        sensor_id += 1
+        for measurement in measurements:
+            make_request(update_sensor_url, 
+                         make_request_update_sensor(user_token, measurement))
         
         # print(response.status_code)
         # print(response.json())
