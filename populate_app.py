@@ -6,6 +6,7 @@ import random
 import pandas as pd
 from faker import Faker
 import time
+import numpy as np
 
 fake = Faker("pt_BR")
 MAC_ADDRESSES = []
@@ -93,17 +94,10 @@ def make_request_update_sensor(user_bearer_token, measurement):
     
     return headers, data
 
-def divide_outflow_into_parts(outflow, parts):
-    
-    measurements = []
-    for _ in range(parts - 1):
-        part = random.uniform(1, outflow - sum(measurements) - (parts - len(measurements) - 1))
-        measurements.append(part)
-    
-    measurements.append(outflow - sum(measurements))
-    
+def simulate_flow_measurements(flow_rate, hours, num_observations):
+    total_volume = flow_rate * hours
+    measurements = np.random.dirichlet(np.ones(num_observations)) * total_volume
     return measurements
-
 
 def make_request_update_user_quota(user_bearer_token, admin_bearer_token, quota):
     headers = make_header(user_bearer_token)
@@ -174,15 +168,16 @@ def main():
         latitude = row['Latitude'].replace(',','.')
         longitude = row['Longitude'].replace(',','.')
         monthly_quota = int(row['VolumeAnual_mÂ³']/12)
-        outflow = float(row['Vazão_1__m³/h'])
-        parts = 2*(int(row['Horas_dia1'])) # 2 medições por hora
+        flow_rate = float(row['Vazão_1__m³/h'])
+        hours = int(row['Horas_dia1'])
+        n_measurements = 2*hours # 2 medições por hora
 
         print(f"Linha {index}:")
         print(f"  Nome do Requerente: {name}")
         print(f"  Localização: {latitude}, {longitude}")
         print(f"  Volume Anual: {monthly_quota} m³")
-        print(f"  Vazão: {outflow} m³/h")
-        print(f"  Horas por dia: {parts}")
+        print(f"  Vazão: {flow_rate} m³/h")
+        print(f"  Horas por dia: {hours}")
 
         response = make_request(create_user_url, 
                                 make_request_create_user(name, admin_token))
@@ -218,7 +213,9 @@ def main():
         # ------ Atualização de sensor ------
         update_sensor_url = base_url + "/sensors/" + str(sensor_id) + "/update"
 
-        measurements = divide_outflow_into_parts(outflow, parts)
+        measurements = simulate_flow_measurements(flow_rate, 
+                                                  hours, 
+                                                  n_measurements)
 
         for measurement in measurements:
             make_request(update_sensor_url, 
